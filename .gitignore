@@ -36,6 +36,5 @@ htmlcov/
 
 # IDE settings (optional, but nice to keep clean)
 .vscode/
-!.vscode/settings.json
 .idea/
 *.swp
