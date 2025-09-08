@@ -1,5 +1,4 @@
-from commands import Command, CommandType
-from interfaces import ClientService
+from src.services.client_service import ClientService
 from typing import Dict, Any, Callable
 
 class MockClientService(ClientService):

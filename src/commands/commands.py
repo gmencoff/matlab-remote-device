@@ -2,8 +2,7 @@ from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional
 from enum import Enum
 import time, uuid
-
-from interfaces import ClientService
+from src.services.client_service import ClientService
 
 class CommandType(str, Enum):
     PROPERTY = "property"

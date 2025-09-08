@@ -1,19 +1,8 @@
-import os
-import json
-import tempfile
-import shutil
-import time
-import threading
-import unittest
-import sys
-
-# Add the parent directory to the path so we can import the modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from file_system_client_service import FileSystemClientService
-from remote_pluto import RemotePluto
-from utils import atomic_write_json
-from commands import PropertyAck
+import os, json, tempfile, shutil, time, threading, unittest
+from src.services.file_system_client_service import FileSystemClientService
+from src.client.remote_pluto import RemotePluto
+from src.utils.utils import atomic_write_json
+from src.commands.commands import PropertyAck
 
 class TestRemotePlutoIntegration(unittest.TestCase):
     def setUp(self):

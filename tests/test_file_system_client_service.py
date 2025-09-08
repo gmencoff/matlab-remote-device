@@ -1,13 +1,6 @@
 import os, json, tempfile, shutil, time, threading, unittest
-
-import sys
-import os
-
-# Add the parent directory to the path so we can import the modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from file_system_client_service import FileSystemClientService
-from utils import atomic_write_json
+from src.services.file_system_client_service import FileSystemClientService
+from src.utils.utils import atomic_write_json
 
 class TestFileSystemClientService(unittest.TestCase):
     def setUp(self):

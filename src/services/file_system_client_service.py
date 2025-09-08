@@ -1,7 +1,7 @@
 import os, json, time, threading
 from typing import Dict, Any, Callable
-from interfaces import ClientService
-from utils import read_json
+from src.services.client_service import ClientService
+from src.utils.utils import read_json
 
 class FileSystemClientService(ClientService):
     """

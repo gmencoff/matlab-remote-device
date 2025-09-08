@@ -1,7 +1,7 @@
 import uuid, time
 from typing import Any, Dict
-from commands import PropertyCommand
-from interfaces import ClientService
+from src.commands.commands import PropertyCommand
+from src.services.client_service import ClientService
 
 class RemotePluto:
     def __init__(self, client_service: ClientService):

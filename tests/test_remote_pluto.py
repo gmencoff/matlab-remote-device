@@ -1,13 +1,6 @@
 
 import unittest
-import sys
-import os
-
-# Add the parent directory to the path so we can import the modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from commands import PropertyAck
-from remote_pluto import RemotePluto
+from src.client.remote_pluto import RemotePluto
 from mock_client_service import MockClientService
 
 class TestRemotePluto(unittest.TestCase):
