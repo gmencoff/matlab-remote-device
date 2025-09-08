@@ -1,5 +1,6 @@
 import os, json, tempfile, shutil, time, threading, unittest
-from src.services.file_system_client_service import FileSystemClientService
+from src.filesystem.file_system_client_service import FileSystemClientService
+from src.filesystem.file_system_paths import FileSystemPaths
 from src.utils.utils import atomic_write_json
 
 class TestFileSystemClientService(unittest.TestCase):
@@ -7,6 +8,7 @@ class TestFileSystemClientService(unittest.TestCase):
         # Create a temporary directory for tests
         self.tmpdir = tempfile.mkdtemp()
         self.service = FileSystemClientService(self.tmpdir, poll_s=0.1)
+        self.paths = FileSystemPaths(self.tmpdir)
 
     def tearDown(self):
         # Clean up after test
@@ -28,7 +30,7 @@ class TestFileSystemClientService(unittest.TestCase):
         self.assertEqual(ack["value"], 2000000)
 
     def test_subscribe_config(self):
-        config_path = os.path.join(self.tmpdir, "config", "config.json")
+        config_path = self.paths.config_path
 
         updates = []
         def on_change(cfg):
@@ -87,7 +89,7 @@ class TestFileSystemClientService(unittest.TestCase):
         self.assertIn("timeout_test", str(context.exception))
         
         # Verify the command was actually written to the commands file
-        with open(self.service.commands_path, "r") as f:
+        with open(self.paths.commands_path, "r") as f:
             commands = f.readlines()
             self.assertTrue(any("timeout_test" in cmd for cmd in commands))
 

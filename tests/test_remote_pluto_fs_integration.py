@@ -1,8 +1,8 @@
 import os, json, tempfile, shutil, time, threading, unittest
-from src.services.file_system_client_service import FileSystemClientService
+from src.filesystem.file_system_client_service import FileSystemClientService
+from src.filesystem.file_system_paths import FileSystemPaths
 from src.client.remote_pluto import RemotePluto
 from src.utils.utils import atomic_write_json
-from src.commands.commands import PropertyAck
 
 class TestRemotePlutoIntegration(unittest.TestCase):
     def setUp(self):
@@ -10,6 +10,7 @@ class TestRemotePlutoIntegration(unittest.TestCase):
         self.tmpdir = tempfile.mkdtemp()
         self.config_path = os.path.join(self.tmpdir, "config", "config.json")
         self.acks_dir = os.path.join(self.tmpdir, "commands", "acks")
+        self.paths = FileSystemPaths(self.tmpdir)
         
         # Create initial config
         self.initial_config = {
@@ -17,8 +18,7 @@ class TestRemotePlutoIntegration(unittest.TestCase):
             "sample_rate": 30e6,
             "rx_buffer_size": 192,
         }
-        os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
-        atomic_write_json(self.config_path, self.initial_config)
+        atomic_write_json(self.paths.config_path, self.initial_config)
         
         # Create client service with faster polling for tests
         self.client_service = FileSystemClientService(self.tmpdir, poll_s=0.1)
@@ -44,7 +44,7 @@ class TestRemotePlutoIntegration(unittest.TestCase):
         # Set up a thread to simulate the server responding with a success ack
         def respond_with_success_ack():
             # Wait for command file to be created
-            cmd_path = self.client_service.commands_path
+            cmd_path = self.paths.commands_path
             while not os.path.exists(cmd_path):
                 time.sleep(0.05)
                 
@@ -80,7 +80,7 @@ class TestRemotePlutoIntegration(unittest.TestCase):
         # Set up a thread to simulate the server responding with a failure ack
         def respond_with_failure_ack():
             # Wait for command file to be created
-            cmd_path = self.client_service.commands_path
+            cmd_path = self.paths.commands_path
             while not os.path.exists(cmd_path):
                 time.sleep(0.05)
                 
@@ -123,7 +123,7 @@ class TestRemotePlutoIntegration(unittest.TestCase):
             "rx_buffer_size": 8192,
             "new_property": "test_value"
         }
-        atomic_write_json(self.config_path, new_config)
+        atomic_write_json(self.paths.config_path, new_config)
         
         # Wait for the config change to be detected
         time.sleep(0.3)
@@ -137,7 +137,7 @@ class TestRemotePlutoIntegration(unittest.TestCase):
     def test_multiple_property_changes(self):
         """Test changing multiple properties in sequence."""
         def respond_with_success_ack():
-            cmd_path = self.client_service.commands_path
+            cmd_path = self.paths.commands_path
             
             # Keep checking for new commands
             last_size = 0
