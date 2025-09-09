@@ -11,6 +11,7 @@ class FileSystemPaths:
         
         # Ensure directories exist
         os.makedirs(self.config_dir, exist_ok=True)
+        os.makedirs(self.commands_dir, exist_ok=True)
         os.makedirs(self.acks_dir, exist_ok=True)
         
         # Define file paths

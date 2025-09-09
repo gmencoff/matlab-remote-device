@@ -21,13 +21,6 @@ class RemotePluto:
         if name.startswith("_"):
             return super().__setattr__(name, value)
 
-        cmd = {
-            "id": str(uuid.uuid4()),
-            "type": "property",
-            "name": name,
-            "value": value,
-            "ts": time.time()
-        }
         cmd = PropertyCommand(name,value)
         ack = cmd.send(self._client_service)
 

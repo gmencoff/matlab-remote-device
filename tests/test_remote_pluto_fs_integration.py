@@ -8,8 +8,6 @@ class TestRemotePlutoIntegration(unittest.TestCase):
     def setUp(self):
         # Create a temporary directory for tests
         self.tmpdir = tempfile.mkdtemp()
-        self.config_path = os.path.join(self.tmpdir, "config", "config.json")
-        self.acks_dir = os.path.join(self.tmpdir, "commands", "acks")
         self.paths = FileSystemPaths(self.tmpdir)
         
         # Create initial config
@@ -54,7 +52,7 @@ class TestRemotePlutoIntegration(unittest.TestCase):
                 cmd = json.loads(cmd_line)
                 
             # Create a success ack
-            ack_path = os.path.join(self.acks_dir, f"{cmd['id']}.json")
+            ack_path = self.paths.get_ack_path(cmd['id'])
             ack_data = {
                 "id": cmd["id"],
                 "ok": True,
@@ -90,7 +88,7 @@ class TestRemotePlutoIntegration(unittest.TestCase):
                 cmd = json.loads(cmd_line)
                 
             # Create a failure ack
-            ack_path = os.path.join(self.acks_dir, f"{cmd['id']}.json")
+            ack_path = self.paths.get_ack_path(cmd['id'])
             ack_data = {
                 "id": cmd["id"],
                 "ok": False,
@@ -152,7 +150,7 @@ class TestRemotePlutoIntegration(unittest.TestCase):
                             cmd = json.loads(cmd_line)
                             
                         # Create a success ack
-                        ack_path = os.path.join(self.acks_dir, f"{cmd['id']}.json")
+                        ack_path = self.paths.get_ack_path(cmd['id'])
                         ack_data = {
                             "id": cmd["id"],
                             "ok": True,
