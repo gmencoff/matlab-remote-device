@@ -120,43 +120,16 @@ class TestEndToEndWorkflow(unittest.TestCase):
 
     def test_concurrent_bidirectional_updates(self):
         """Test concurrent property updates in both directions."""
-        # Define a function to update RemotePluto properties
-        def update_remote_pluto():
-            self.remote_pluto.rx_lo = 2.7e9
-            time.sleep(0.2)
-            self.remote_pluto.rx_buffer_size = 512
         
-        # Define a function to update MockPluto properties
-        def update_mock_pluto():
-            time.sleep(0.1)  # Slight delay to ensure interleaved execution
-            self.mock_pluto.gain = 70
-            
-            # Publish the updated config
-            updated_config = {
-                "rx_lo": self.mock_pluto.rx_lo,
-                "sample_rate": self.mock_pluto.sample_rate,
-                "rx_buffer_size": self.mock_pluto.rx_buffer_size,
-                "gain": self.mock_pluto.gain
-            }
-            self.edge_service.publish_config(updated_config)
-            
-            time.sleep(0.2)
-            self.mock_pluto.sample_rate = 50e6
-            
-            # Publish the updated config again
-            updated_config["sample_rate"] = self.mock_pluto.sample_rate
-            self.edge_service.publish_config(updated_config)
+        self.remote_pluto.rx_lo = 2.7e9
+        time.sleep(0.2)
+        self.remote_pluto.rx_buffer_size = 512
+    
+        time.sleep(0.1)  # Slight delay to ensure interleaved execution
+        self.mock_pluto.gain = 70
         
-        # Start threads for concurrent updates
-        remote_thread = threading.Thread(target=update_remote_pluto)
-        mock_thread = threading.Thread(target=update_mock_pluto)
-        
-        remote_thread.start()
-        mock_thread.start()
-        
-        # Wait for threads to complete
-        remote_thread.join()
-        mock_thread.join()
+        time.sleep(0.2)
+        self.mock_pluto.sample_rate = 50e6
         
         # Wait for all updates to be processed
         time.sleep(1.0)

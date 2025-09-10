@@ -33,7 +33,22 @@ class FileSystemEdgeService(EdgeService):
         temp_path = f"{self.paths.config_path}.tmp"
         with open(temp_path, "w") as f:
             json.dump(config, f, indent=2)
-        os.replace(temp_path, self.paths.config_path)
+
+        # Retry logic with exponential backoff
+        max_attempts = 5
+        base_delay = 0.1  # seconds
+        
+        for attempt in range(max_attempts):
+            try:
+                os.replace(temp_path, self.paths.config_path)
+                return  # Success
+            except OSError as e:
+                if attempt == max_attempts - 1:
+                    raise  # Re-raise on last attempt
+                
+                # Exponential backoff
+                delay = base_delay * (2 ** attempt)
+                time.sleep(delay)
 
     def subscribe_commands(self, on_command: Callable[[Command], Ack]) -> None:
         """Poll commands.jsonl for new commands and invoke callback for each."""
