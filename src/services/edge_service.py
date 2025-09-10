@@ -1,0 +1,14 @@
+from abc import ABC, abstractmethod
+from typing import Dict, Any, Callable
+from src.commands.commands import Command, Ack
+
+class EdgeService(ABC):
+    @abstractmethod
+    def publish_config(self, config: Dict[str, Any]) -> None:
+        """Publish the current configuration to be read by clients."""
+        pass
+
+    @abstractmethod
+    def subscribe_commands(self, on_command: Callable[[Command], Ack]) -> None:
+        """Register a callback for incoming commands and return acknowledgments."""
+        pass

@@ -88,6 +88,9 @@ class PropertyCommand(Command):
     
     def execute(self, device: Any) -> PropertyAck:
         """Execute the property set command on the device."""
+        if not hasattr(device, self.name):
+            return PropertyAck(self.id, False, error=f"Property not found: {self.name}")
+        
         try:
             # Set the property on the device
             setattr(device, self.name, self.value)
