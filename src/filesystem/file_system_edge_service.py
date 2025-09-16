@@ -16,12 +16,12 @@ class FileSystemEdgeService(EdgeService):
     """
 
     def __init__(self, root: str, poll_s: float = 1.0,
-                 _post_write_file_cb: Callable[[str], None] = None,
-                 _pre_read_file_cb: Callable[[str], None] = None):
+                 post_write_file_cb: Callable[[str], None] = None,
+                 pre_read_file_cb: Callable[[str], None] = None):
         self.paths = FileSystemPaths(root)
         self.poll_s = poll_s
-        self._post_write_file_cb = _post_write_file_cb or (lambda _: None)
-        self._pre_read_file_cb = _pre_read_file_cb or (lambda _: None)
+        self._post_write_file_cb = post_write_file_cb or (lambda _: None)
+        self._pre_read_file_cb = pre_read_file_cb or (lambda _: None)
         self._last_command_position = 0
         
         # Create empty commands file if it doesn't exist
@@ -90,7 +90,7 @@ class FileSystemEdgeService(EdgeService):
                                         ack_path = self.paths.get_ack_path(cmd.id)
                                         with open(ack_path, "w") as ack_file:
                                             json.dump(ack.to_dict(), ack_file, indent=2)
-                                            
+
                                             # Perform any required action after writing ack
                                             self._post_write_file_cb(ack_path)
                                     except json.JSONDecodeError:

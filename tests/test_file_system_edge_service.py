@@ -13,7 +13,20 @@ class TestFileSystemEdgeService(unittest.TestCase):
         # Create a temporary directory for tests
         self.tmpdir = tempfile.mkdtemp()
         self.paths = FileSystemPaths(self.tmpdir)
-        self.service = FileSystemEdgeService(self.tmpdir, poll_s=0.1)
+
+        # Create callbacks for post-write and pre-read operations
+        def post_write_callback(filepath):
+            self.post_write_calls.append(filepath)
+            
+        def pre_read_callback(filepath):
+            self.pre_read_calls.append(filepath)
+
+        # Store callback calls
+        self.post_write_calls = []
+        self.pre_read_calls = []
+
+        # Create service
+        self.service = FileSystemEdgeService(self.tmpdir, poll_s=0.1,post_write_file_cb=post_write_callback,pre_read_file_cb=pre_read_callback)
     
     def tearDown(self):
         # Clean up after test
@@ -33,6 +46,10 @@ class TestFileSystemEdgeService(unittest.TestCase):
         
         # Verify the config file was created
         self.assertTrue(os.path.exists(self.paths.config_path))
+
+        # Verify callback was called
+        self.assertEqual(len(self.post_write_calls), 1)
+        self.assertEqual(self.post_write_calls[0], self.paths.config_path)
         
         # Read the config file and verify its contents
         with open(self.paths.config_path, "r") as f:
@@ -60,6 +77,10 @@ class TestFileSystemEdgeService(unittest.TestCase):
         
         # Wait for the command to be processed
         time.sleep(0.3)
+
+        # Verify that the pre-read callback was called with commands path
+        self.assertTrue(len(self.pre_read_calls) > 0)
+        self.assertEqual(self.pre_read_calls[0], self.paths.commands_path)
         
         # Verify the command was received by the handler
         self.assertEqual(self.received_command.type, "property")
@@ -73,6 +94,10 @@ class TestFileSystemEdgeService(unittest.TestCase):
         # Read the acknowledgment file and verify its contents
         with open(ack_path, "r") as f:
             ack_dict = json.load(f)
+
+        # Verify that the write callback was called with ack path
+        self.assertEqual(len(self.post_write_calls), 1)
+        self.assertEqual(self.post_write_calls[0], ack_path)
         
         self.assertEqual(ack_dict["id"], cmd.id)
         self.assertTrue(ack_dict["ok"])
