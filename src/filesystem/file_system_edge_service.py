@@ -16,12 +16,12 @@ class FileSystemEdgeService(EdgeService):
     """
 
     def __init__(self, root: str, poll_s: float = 1.0,
-                 post_publish_config_callback: Callable[[], None] = None,
-                 pre_check_commands_callback: Callable[[], None] = None):
+                 _post_write_file_cb: Callable[[str], None] = None,
+                 _pre_read_file_cb: Callable[[str], None] = None):
         self.paths = FileSystemPaths(root)
         self.poll_s = poll_s
-        self._post_publish_config_cb = post_publish_config_callback or (lambda: None)
-        self._pre_check_commands_cb = pre_check_commands_callback or (lambda: None)
+        self._post_write_file_cb = _post_write_file_cb or (lambda _: None)
+        self._pre_read_file_cb = _pre_read_file_cb or (lambda _: None)
         self._last_command_position = 0
         
         # Create empty commands file if it doesn't exist
@@ -45,7 +45,7 @@ class FileSystemEdgeService(EdgeService):
         for attempt in range(max_attempts):
             try:
                 os.replace(temp_path, self.paths.config_path)
-                self._post_publish_config_cb()
+                self._post_write_file_cb(self.paths.config_path)
                 return  # Success
             except OSError as e:
                 if attempt == max_attempts - 1:
@@ -62,10 +62,11 @@ class FileSystemEdgeService(EdgeService):
                 try:
                     # Check if commands file exists and has content
                     if os.path.exists(self.paths.commands_path) and os.path.getsize(self.paths.commands_path) > 0:
+                        
+                        # Perform any required action before checking commands
+                        self._pre_read_file_cb(self.paths.commands_path)
+                        
                         with open(self.paths.commands_path, "r") as f:
-                            # Perform any required action before checking commands
-                            self._pre_check_commands_cb()
-
                             # Seek to last read position
                             f.seek(self._last_command_position)
                             
@@ -89,6 +90,9 @@ class FileSystemEdgeService(EdgeService):
                                         ack_path = self.paths.get_ack_path(cmd.id)
                                         with open(ack_path, "w") as ack_file:
                                             json.dump(ack.to_dict(), ack_file, indent=2)
+                                            
+                                            # Perform any required action after writing ack
+                                            self._post_write_file_cb(ack_path)
                                     except json.JSONDecodeError:
                                         print(f"Invalid JSON in command: {cmd_line}")
                                     except Exception as e:
