@@ -38,6 +38,7 @@ class TestFileSystemClientService(unittest.TestCase):
 
         self.service.subscribe_config(on_change)
 
+        time.sleep(0.3)
         atomic_write_json(config_path, {"sample_rate": 2000000})
         time.sleep(0.3)
         atomic_write_json(config_path, {"sample_rate": 4000000})

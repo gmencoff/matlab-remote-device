@@ -112,9 +112,9 @@ class PropertyCommand(Command):
         })
         return data
     
-    def send(self, client_service: ClientService) -> PropertyAck:
+    def send(self, client_service: ClientService, timeout = 5) -> PropertyAck:
         """Send the command using the provided client service."""
-        resp = client_service.send_command(self.to_dict())
+        resp = client_service.send_command(self.to_dict(), timeout=timeout)
         return PropertyAck(resp.get('id', self.id),resp.get('ok', False),resp.get('value'),error=resp.get('error'))
 
 class MethodCommand(Command):

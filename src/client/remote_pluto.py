@@ -22,7 +22,7 @@ class RemotePluto:
             return super().__setattr__(name, value)
 
         cmd = PropertyCommand(name,value)
-        ack = cmd.send(self._client_service)
+        ack = cmd.send(self._client_service, timeout=500)
 
         if ack.ok:
             # If we get an "ok", update the internal state. A remote config update could overwrite this.
@@ -39,4 +39,4 @@ class RemotePluto:
             "kwargs": kwargs,
             "ts": time.time()
         }
-        return self._client_service.send_command(cmd, timeout=5.0)
+        return self._client_service.send_command(cmd, timeout=500.0)
