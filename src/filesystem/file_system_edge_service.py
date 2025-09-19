@@ -60,11 +60,12 @@ class FileSystemEdgeService(EdgeService):
         def loop():
             while True:
                 try:
+
+                    # Perform any required action before checking commands
+                    self._pre_read_file_cb(self.paths.commands_path)
+
                     # Check if commands file exists and has content
                     if os.path.exists(self.paths.commands_path) and os.path.getsize(self.paths.commands_path) > 0:
-                        
-                        # Perform any required action before checking commands
-                        self._pre_read_file_cb(self.paths.commands_path)
                         
                         with open(self.paths.commands_path, "r") as f:
                             # Seek to last read position
