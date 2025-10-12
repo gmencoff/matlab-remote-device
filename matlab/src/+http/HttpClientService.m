@@ -1,7 +1,6 @@
 classdef HttpClientService < client.ClientService
     properties (Access = private)
-        ConfigCallback
-        DeviceId
+        FunctionCaller
         PollInterval
         ConfigTimer
     end
@@ -13,22 +12,23 @@ classdef HttpClientService < client.ClientService
                 optargs.PollInterval = 10
             end
             
-            obj.DeviceId = deviceId;
+            obj.FunctionCaller = http.FunctionCaller(deviceId);
             obj.PollInterval = optargs.PollInterval;
         end
         
         function response = sendCommand(obj, cmd, timeout)
-            % TODO
+            response = obj.FunctionCaller.sendCommand(cmd,timeout);
         end
         
         function subscribeConfig(obj, callback)
             % Poll config.json and invoke callback whenever it changes
-            obj.ConfigCallback = callback;
+            obj.FunctionCaller.ConfigCallback = callback;
             
             % Start polling timer
+            fcnCaller = obj.FunctionCaller;
             obj.ConfigTimer = timer('ExecutionMode', 'fixedRate', ...
                                   'Period', obj.PollInterval, ...
-                                  'TimerFcn', @(~,~)pollConfig(obj));
+                                  'TimerFcn', @(~,~)pollConfig(fcnCaller));
             start(obj.ConfigTimer);
         end
 
@@ -39,30 +39,3 @@ classdef HttpClientService < client.ClientService
         end
     end
 end
-
-function pollConfig(obj)
-            % Replace with your actual Firebase function URL
-            baseUrl = 'https://getconfig-tgyovhjiqq-uc.a.run.app';
-            
-            % Build the full URL with query parameter
-            url = sprintf('%s?id=%s', baseUrl, obj.DeviceId);
-            
-            try
-                % Make the HTTP GET request
-                configData = webread(url);
-                
-                % Set the config
-                obj.ConfigCallback(configData.data.config);
-            catch ME
-                % Handle errors
-                if contains(ME.message, '404')
-                    error('Config not found: %s', configId);
-                elseif contains(ME.message, '400')
-                    error('Invalid request: Missing or invalid config ID');
-                elseif contains(ME.message, '500')
-                    error('Server error: Please try again later');
-                else
-                    error('Network error: %s', ME.message);
-                end
-            end
-        end
