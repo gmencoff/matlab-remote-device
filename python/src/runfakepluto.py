@@ -9,9 +9,9 @@ import os
 import time
 import signal
 from typing import Optional
-from fakepluto import FakePluto
-from edge.edge_pluto_controller import EdgePlutoController
-from firebase.firebase_edge_service import FirebaseEdgeService
+from src.fakepluto import FakePluto
+from src.edge.edge_pluto_controller import EdgePlutoController
+from src.firebase.firebase_edge_service import FirebaseEdgeService
 
 
 def main():

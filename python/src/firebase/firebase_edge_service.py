@@ -3,8 +3,8 @@ import time
 from typing import Dict, Any, Callable, Optional
 import firebase_admin
 from firebase_admin import credentials, firestore
-from services.edge_service import EdgeService
-from commands.commands import Command, Ack, decode_command
+from src.services.edge_service import EdgeService
+from src.commands.commands import Command, Ack, decode_command
 
 
 class FirebaseEdgeService(EdgeService):
