@@ -56,7 +56,7 @@ export const getConfig = onRequest(async (request, response) => {
 
     response.status(200).json({
       id: deviceId,
-      data: configData.data,
+      config: configData.config,
       timestamp: configData.timestamp,
       lastUpdated: configData.lastUpdated,
     });

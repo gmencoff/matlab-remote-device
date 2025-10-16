@@ -6,7 +6,7 @@
 // Configuration document structure
 export interface ConfigDocument {
   id: string;
-  data: any; // The actual configuration data from the caller
+  config: any; // The actual configuration data from the caller
   timestamp: number;
   lastUpdated: number;
 }

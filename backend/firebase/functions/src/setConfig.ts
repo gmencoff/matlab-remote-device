@@ -42,7 +42,7 @@ export const setConfig = onRequest(async (request, response) => {
     // Create the config document
     const configDocument: ConfigDocument = {
       id: deviceId,
-      data: config,
+      config: config,
       timestamp: Date.now(),
       lastUpdated: Date.now(),
     };
