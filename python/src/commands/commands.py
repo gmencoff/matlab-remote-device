@@ -54,6 +54,22 @@ class MethodAck(Ack):
         return data
 
 
+class ReceiveAck(Ack):
+    """Acknowledgment for receive commands containing I/Q samples."""
+    
+    def __init__(self, command_id: str, ok: bool, real_samples=None, imag_samples=None, error: Optional[str] = None):
+        super().__init__(command_id, ok, ack_type="receive", error=error)
+        self.real_samples = real_samples
+        self.imag_samples = imag_samples
+    
+    def to_dict(self) -> Dict[str, Any]:
+        data = super().to_dict()
+        if self.ok and self.real_samples is not None and self.imag_samples is not None:
+            data["real_samples"] = self.real_samples
+            data["imag_samples"] = self.imag_samples
+        return data
+
+
 class Command(ABC):
     """Base class for all commands."""
     
@@ -158,6 +174,54 @@ class MethodCommand(Command):
         return MethodAck(resp.get('id', self.id),resp.get('ok', False),resp.get('result'),resp.get('error'))
 
 
+class ReceiveCommand(Command):
+    """Command to receive I/Q samples from the device."""
+    
+    def __init__(self, id = None, ts = None):
+        id = id or str(uuid.uuid4())
+        ts = ts or time.time()
+        super().__init__("receive", id, ts)
+    
+    def execute(self, device: Any) -> ReceiveAck:
+        """Execute the receive command on the device."""
+        try:
+            # Call rx method on the device
+            if not hasattr(device, 'rx'):
+                return ReceiveAck(self.id, False, error="Device does not have rx method")
+            
+            # Get complex samples from device
+            complex_samples = device.rx()
+            
+            # Convert complex samples to real and imaginary parts
+            if hasattr(complex_samples, 'real') and hasattr(complex_samples, 'imag'):
+                # Handle numpy arrays or similar
+                real_samples = complex_samples.real.tolist() if hasattr(complex_samples.real, 'tolist') else list(complex_samples.real)
+                imag_samples = complex_samples.imag.tolist() if hasattr(complex_samples.imag, 'tolist') else list(complex_samples.imag)
+            else:
+                # Handle list of complex numbers
+                real_samples = [sample.real for sample in complex_samples]
+                imag_samples = [sample.imag for sample in complex_samples]
+            
+            return ReceiveAck(self.id, True, real_samples=real_samples, imag_samples=imag_samples)
+            
+        except Exception as e:
+            return ReceiveAck(self.id, False, error=f"Error receiving samples: {str(e)}")
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return super().to_dict()
+    
+    def send(self, client_service: ClientService, timeout = 5) -> ReceiveAck:
+        """Send the command using the provided client service."""
+        resp = client_service.send_command(self.to_dict(), timeout=timeout)
+        return ReceiveAck(
+            resp.get('id', self.id),
+            resp.get('ok', False),
+            real_samples=resp.get('real_samples'),
+            imag_samples=resp.get('imag_samples'),
+            error=resp.get('error')
+        )
+
+
 # Standalone decoder functions
 
 def decode_command(data: Dict[str, Any]) -> Command:
@@ -171,6 +235,9 @@ def decode_command(data: Dict[str, Any]) -> Command:
         return cmd
     elif command_type == "method":
         cmd = MethodCommand(data["name"], data.get("args", []), data.get("kwargs", {}), data["id"], data["ts"])
+        return cmd
+    elif command_type == "receive":
+        cmd = ReceiveCommand(data["id"], data["ts"])
         return cmd
     else:
         raise ValueError(f"Unknown command type: {command_type}")
@@ -192,6 +259,14 @@ def decode_ack(data: Dict[str, Any]) -> Ack:
             data["id"], 
             data.get("ok", False),
             result=data.get("result"),
+            error=data.get("error")
+        )
+    elif ack_type == "receive":
+        return ReceiveAck(
+            data["id"], 
+            data.get("ok", False),
+            real_samples=data.get("real_samples"),
+            imag_samples=data.get("imag_samples"),
             error=data.get("error")
         )
     else:  # generic or unknown type
