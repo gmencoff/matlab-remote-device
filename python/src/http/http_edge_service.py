@@ -112,7 +112,7 @@ class HttpEdgeService(EdgeService):
                         for command_data in commands:
                             try:
                                 # Decode the command
-                                command = decode_command(command_data)
+                                command = decode_command(command_data.get("command", {}))
                                 
                                 # Process the command and get acknowledgment
                                 ack = on_command(command)
