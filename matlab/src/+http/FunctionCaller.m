@@ -37,10 +37,7 @@ classdef FunctionCaller < handle
     
             try
                 % Make the HTTP request
-                responseJson = webwrite(baseUrl, jsonPayload, options);
-                
-                % Parse the JSON response
-                response = jsondecode(responseJson);
+                response = webwrite(baseUrl, jsonPayload, options);
                 
                 % Check if successful
                 if isfield(response, 'success') && response.success
@@ -66,7 +63,7 @@ classdef FunctionCaller < handle
                 configData = webread(url);
                 
                 % Set the config
-                obj.ConfigCallback(configData.data.config);
+                obj.ConfigCallback(configData.config);
             catch ME
                 % Handle errors
                 if contains(ME.message, '404')
