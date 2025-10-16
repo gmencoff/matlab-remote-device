@@ -38,21 +38,10 @@ classdef RemotePluto < handle
             end
         end
         
-        function result = callMethod(obj, name, varargin)
-            % Call a method on the remote device
-            cmd = commands.MethodCommand(name, varargin);
+        function result = rx(obj)
+            cmd = commands.ReceiveCommand();
             response = obj.clientService.sendCommand(cmd, 500);
-            
-            if response.ok
-                result = response.result;
-            else
-                error('Failed to call %s: %s', name, response.error);
-            end
-        end
-        
-        function names = getPropertyNames(obj)
-            % Get list of available property names
-            names = fieldnames(obj.state);
+            result = response.real_samples + 1i*response.imag_samples;
         end
         
         function disp(obj)
@@ -69,6 +58,11 @@ classdef RemotePluto < handle
         function onConfigUpdate(obj, cfg)
             % Handle config updates from the client service
             obj.state = cfg;
+        end
+
+        function names = getPropertyNames(obj)
+            % Get list of available property names
+            names = fieldnames(obj.state);
         end
     end
 end

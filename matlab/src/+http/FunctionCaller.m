@@ -60,7 +60,8 @@ classdef FunctionCaller < handle
             
             try
                 % Make the HTTP GET request
-                configData = webread(url);
+                options = weboptions('Timeout', 60);
+                configData = webread(url,options);
                 
                 % Set the config
                 obj.ConfigCallback(configData.config);
