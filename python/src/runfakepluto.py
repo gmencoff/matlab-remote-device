@@ -11,7 +11,7 @@ import signal
 from typing import Optional
 from src.fakepluto import FakePluto
 from src.edge.edge_pluto_controller import EdgePlutoController
-from src.firebase.firebase_edge_service import FirebaseEdgeService
+from src.http.http_edge_service import HttpEdgeService
 
 
 def main():
@@ -29,7 +29,7 @@ def main():
         fake_pluto = FakePluto()
         
         # Create Firebase edge service
-        firebase_service = FirebaseEdgeService(device_id=device_id)
+        firebase_service = HttpEdgeService(device_id=device_id)
         
         # Create edge controller
         controller = EdgePlutoController(

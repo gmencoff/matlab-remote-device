@@ -1,6 +1,7 @@
 import {onRequest} from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
 import {getFirestore} from "firebase-admin/firestore";
+import {ConfigDocument} from "./types";
 
 export const getConfig = onRequest(async (request, response) => {
   // Set CORS headers to allow cross-origin requests
@@ -50,12 +51,14 @@ export const getConfig = onRequest(async (request, response) => {
     }
 
     // Return the config data
-    const configData = configDoc.data();
+    const configData = configDoc.data() as ConfigDocument;
     logger.info(`Successfully retrieved config: ${deviceId}`);
 
     response.status(200).json({
       id: deviceId,
-      data: configData,
+      data: configData.data,
+      timestamp: configData.timestamp,
+      lastUpdated: configData.lastUpdated,
     });
   } catch (error) {
     logger.error("Error fetching config:", error);

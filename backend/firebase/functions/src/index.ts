@@ -16,6 +16,9 @@ initializeApp();
 // Import custom functions
 export {getConfig} from "./getConfig";
 export {sendCommand} from "./sendCommand";
+export {setConfig} from "./setConfig";
+export {getCommand} from "./getCommand";
+export {sendAck} from "./sendAck";
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript

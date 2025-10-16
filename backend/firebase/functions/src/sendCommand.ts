@@ -1,22 +1,7 @@
 import {onRequest} from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
 import {getFirestore} from "firebase-admin/firestore";
-
-interface CommandData {
-  deviceId: string;
-  commandId: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  command: any; // The actual command payload
-  timestamp?: number;
-}
-
-interface AckData {
-  deviceId: string;
-  commandId: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  response: any; // The response payload from the device
-  timestamp?: number;
-}
+import {CommandDocument, AckDocument, CommandRequest} from "./types";
 
 export const sendCommand = onRequest(async (request, response) => {
   // Set CORS headers to allow cross-origin requests
@@ -40,7 +25,7 @@ export const sendCommand = onRequest(async (request, response) => {
     }
 
     // Extract command data from request body
-    const {deviceId, commandId, command}: CommandData = request.body;
+    const {deviceId, commandId, command}: CommandRequest = request.body;
 
     if (!deviceId || !commandId || !command) {
       response.status(400).json({
@@ -55,11 +40,12 @@ export const sendCommand = onRequest(async (request, response) => {
     const db = getFirestore();
 
     // Create the command document
-    const commandData: CommandData = {
+    const commandData: CommandDocument = {
       deviceId,
       commandId,
       command,
       timestamp: Date.now(),
+      answered: false,
     };
 
     // Write command to Firestore in the commands collection
@@ -81,7 +67,7 @@ export const sendCommand = onRequest(async (request, response) => {
       .doc(commandId);
 
     // Create a promise that resolves when the acknowledgement is received
-    const waitForAck = new Promise<AckData>((resolve, reject) => {
+    const waitForAck = new Promise<AckDocument>((resolve, reject) => {
       let unsubscribe: (() => void) | null = null;
 
       // Set up timeout
@@ -96,7 +82,7 @@ export const sendCommand = onRequest(async (request, response) => {
       unsubscribe = ackDocRef.onSnapshot(
         (doc) => {
           if (doc.exists) {
-            const ackData = doc.data() as AckData;
+            const ackData = doc.data() as AckDocument;
             logger.info(
               `Ack rx for command ${commandId} from device ${deviceId}`
             );
