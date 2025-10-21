@@ -15,5 +15,14 @@
       ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [{
+    "collectionGroup": "acks",
+    "fieldPath": "response.imag_samples",
+    "indexes": []
+  },
+  {
+    "collectionGroup": "acks",
+    "fieldPath": "response.real_samples",
+    "indexes": []
+  }]
 }
