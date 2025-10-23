@@ -34,35 +34,71 @@ export const getCommand = onRequest(async (request, response) => {
       return;
     }
 
-    logger.info(`Fetching unanswered commands for device: ${deviceId}`);
+    logger.info(`Listening for unanswered commands for device: ${deviceId}`);
 
     // Initialize Firestore
     const db = getFirestore();
 
-    // Get all commands for the device that haven't been answered
-    const commandsQuery = await db
+    // Set up real-time listener for unanswered commands
+    const unsubscribe = db
       .collection("commands")
       .doc(deviceId)
       .collection("commands")
       .where("answered", "==", false)
       .orderBy("timestamp", "asc")
-      .get();
+      .limit(1) // Only get the oldest command
+      .onSnapshot(
+        (snapshot) => {
+          if (snapshot.empty) {
+            logger.info(`No unanswered commands found for device: ${deviceId}`);
+            // Don't send response yet, keep listening
+            return;
+          }
 
-    const commands: CommandDocument[] = [];
-    commandsQuery.forEach((doc) => {
-      const commandData = doc.data() as CommandDocument;
-      commands.push(commandData);
+          // Get the oldest command
+          const oldestCommandDoc = snapshot.docs[0];
+          const commandData = oldestCommandDoc.data() as CommandDocument;
+
+          logger.info(
+            `Found oldest unanswered command for device: ${deviceId}, ` +
+            `commandId: ${commandData.commandId}`
+          );
+
+          const responseData: GetCommandResponse = {
+            command: commandData,
+          };
+
+          // Send the response and clean up
+          response.status(200).json(responseData);
+          unsubscribe(); // Stop listening after sending the command
+        },
+        (error) => {
+          logger.error("Error listening for commands:", error);
+          response.status(500).json({
+            error: "Internal server error",
+          });
+          unsubscribe(); // Clean up on error
+        }
+      );
+
+    // Set up timeout to prevent hanging connections
+    const timeout = setTimeout(() => {
+      logger.warn(
+        `Timeout reached for device: ${deviceId}, no command available`
+      );
+      response.status(204).json({
+        command: null,
+      });
+      unsubscribe();
+    }, 300000); // 300 second timeout
+
+    // Clean up timeout when response is sent
+    response.on("close", () => {
+      clearTimeout(timeout);
+      unsubscribe();
     });
-
-    logger.info(`Found ${commands.length} unanswered for: ${deviceId}`);
-
-    const responseData: GetCommandResponse = {
-      commands: commands,
-    };
-
-    response.status(200).json(responseData);
   } catch (error) {
-    logger.error("Error fetching commands:", error);
+    logger.error("Error setting up command listener:", error);
     response.status(500).json({
       error: "Internal server error",
     });

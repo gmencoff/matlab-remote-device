@@ -38,7 +38,7 @@ export interface SetConfigRequest {
 
 // getCommand response
 export interface GetCommandResponse {
-  commands: CommandDocument[];
+  command: CommandDocument | null;
 }
 
 // sendAck request
