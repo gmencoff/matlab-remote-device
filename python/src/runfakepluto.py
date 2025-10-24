@@ -11,7 +11,7 @@ import signal
 from typing import Optional
 from src.fakepluto import FakePluto
 from src.edge.edge_pluto_controller import EdgePlutoController
-from src.http.http_edge_service import HttpEdgeService
+from src.httpservice.http_edge_service import HttpEdgeService
 
 
 def main():

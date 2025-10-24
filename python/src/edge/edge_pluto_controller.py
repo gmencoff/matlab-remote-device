@@ -8,9 +8,10 @@ class EdgePlutoController:
     Handles commands from remote clients and publishes device state.
     """
     
-    def __init__(self, pluto_sdr, edge_service: EdgeService, poll_s: float = 1.0):
+    def __init__(self, pluto_sdr, edge_service: EdgeService, config_props, poll_s: float = 1.0):
         self._pluto = pluto_sdr
         self._edge_service = edge_service
+        self._config_props = config_props
         self._config = {}
         self._poll_s = poll_s
                 
@@ -31,19 +32,19 @@ class EdgePlutoController:
                     self._edge_service.publish_config(config)
                 time.sleep(self._poll_s)
 
-        threading.Thread(target=loop, daemon=True).start()
+        threading.Thread(target=loop, daemon=True).start()       
 
     def _get_current_config(self):
         config = {}
         # Get all public properties from the device
-        for attr_name in dir(self._pluto):
+        for attr_name in self._config_props:
             # Skip private attributes and methods
-            if not attr_name.startswith('_') and not callable(getattr(self._pluto, attr_name)):
-                try:
-                    config[attr_name] = getattr(self._pluto, attr_name)
-                except Exception:
-                    # Skip properties that can't be read
-                    pass
+            try:
+                config[attr_name] = getattr(self._pluto, attr_name)
+            except Exception:
+                # Skip properties that can't be read
+                pass
+            
         return config
     
     
