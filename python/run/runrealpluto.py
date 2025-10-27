@@ -6,7 +6,7 @@ This creates a mock Pluto SDR device and connects it to Firebase for remote cont
 import sys
 import os
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import time
 import signal
@@ -23,7 +23,7 @@ def main():
     
     # Configuration
     device_id = createId(10)
-    poll_interval = 1.0  # seconds
+    poll_interval = 10.0  # seconds
     
     print(f"Starting Real Pluto Device with ID: {device_id}")
     print("=" * 50)
