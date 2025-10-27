@@ -39,7 +39,6 @@ def main():
         controller = EdgePlutoController(
             pluto_sdr=sdr,
             edge_service=firebase_service,
-            config_props=["rx_buffer_size"],
             poll_s=poll_interval
         )
         
