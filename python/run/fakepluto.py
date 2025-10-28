@@ -5,7 +5,7 @@ class FakePluto:
     
     def __init__(self):
         self.sample_rate = 30e6
+        self.rx_buffer_size = 1024
     
     def rx(self):
-        n = 1024
-        return np.random.randn(n) + 1j * np.random.randn(n)
+        return np.random.randn(self.rx_buffer_size) + 1j * np.random.randn(self.rx_buffer_size)
