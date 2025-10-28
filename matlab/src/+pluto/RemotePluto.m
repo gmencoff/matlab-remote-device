@@ -7,11 +7,16 @@ classdef RemotePluto < handle
     end
     
     methods
-        function obj = RemotePluto(clientService)
+        function obj = RemotePluto(id,inargs)
             arguments
-                clientService (1,1) client.ClientService
+                id
+                inargs.ClientService = []
             end
-            obj.clientService = clientService;
+            if isempty(inargs.ClientService)
+                obj.clientService = http.HttpClientService(id);
+            else
+                obj.clientService = inargs.ClientService;
+            end
             obj.state = struct();
             obj.clientService.subscribeConfig(@obj.onConfigUpdate);
         end
