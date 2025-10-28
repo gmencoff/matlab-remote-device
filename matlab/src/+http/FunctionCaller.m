@@ -8,6 +8,7 @@ classdef FunctionCaller < handle
     
     properties (Access = private)
         DeviceId
+        RequestInProcess = false
     end
 
     methods
@@ -36,8 +37,15 @@ classdef FunctionCaller < handle
                 'CharacterEncoding', 'UTF-8');
     
             try
+                % Wait until no request is in process
+                while obj.RequestInProcess
+                    pause(0.01);
+                end
+
                 % Make the HTTP request
+                obj.RequestInProcess = true;
                 response = webwrite(baseUrl, jsonPayload, options);
+                obj.RequestInProcess = false;
                 
                 % Check if successful
                 if isfield(response, 'success') && response.success
@@ -47,11 +55,16 @@ classdef FunctionCaller < handle
                 end
                 
             catch ME
+                obj.RequestInProcess = false;
                 ack = commands.ErrorAck(cmd.id,ME.message);
             end
         end
 
         function pollConfig(obj)
+            if obj.RequestInProcess
+                return
+            end
+            
             % Firebase function URL
             baseUrl = 'https://getconfig-tgyovhjiqq-uc.a.run.app';
             
