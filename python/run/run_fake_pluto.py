@@ -9,7 +9,7 @@ import os
 import time
 import signal
 from typing import Optional
-from src.fakepluto import FakePluto
+from fakepluto import FakePluto
 from src.edge.edge_pluto_controller import EdgePlutoController
 from src.httpservice.http_edge_service import HttpEdgeService
 
