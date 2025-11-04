@@ -81,13 +81,8 @@ class PropertySetController:
     """Controller for setting properties."""
     
     @abstractmethod
-    def setprop(self, name: str, value: Any):
+    def setPropCmd(self, name: str, value: Any, id: str, ts: float) -> PropertyAck:
         """Set a property on the device."""
-        pass
-
-    @abstractmethod
-    def getprop(self, name: str) -> Any:
-        """Get a property from the device."""
         pass
 
 class PropertyCommand(Command):
@@ -102,19 +97,7 @@ class PropertyCommand(Command):
     
     def execute(self, controller: PropertySetController) -> PropertyAck:
         """Execute the property set command on the device."""
-        
-        try:
-            # Set the property on the device
-            controller.setprop(self.name, self.value)
-            
-            # Read back the actual value (might be different from requested)
-            actual_value = controller.getprop(self.name)
-            
-            return PropertyAck(self.id, True, value=actual_value)
-        except AttributeError:
-            return PropertyAck(self.id, False, error=f"Property not found: {self.name}")
-        except Exception as e:
-            return PropertyAck(self.id, False, error=f"Error setting {self.name}: {str(e)}")
+        return controller.setPropCmd(self.name, self.value, self.id, self.ts)
     
     def to_dict(self) -> Dict[str, Any]:
         data = super().to_dict()
@@ -133,7 +116,7 @@ class ReceiveController:
     """Controller for setting properties."""
     
     @abstractmethod
-    def rx(self) -> Any:
+    def rxCmd(self, id: str, ts: float) -> ReceiveAck:
         """Get receive samples from the device."""
         pass
 
@@ -147,25 +130,7 @@ class ReceiveCommand(Command):
     
     def execute(self, controller: ReceiveController) -> ReceiveAck:
         """Execute the receive command on the device."""
-        try:
-            
-            # Get complex samples from device
-            complex_samples = controller.rx()
-            
-            # Convert complex samples to real and imaginary parts
-            if hasattr(complex_samples, 'real') and hasattr(complex_samples, 'imag'):
-                # Handle numpy arrays or similar
-                real_samples = complex_samples.real.tolist() if hasattr(complex_samples.real, 'tolist') else list(complex_samples.real)
-                imag_samples = complex_samples.imag.tolist() if hasattr(complex_samples.imag, 'tolist') else list(complex_samples.imag)
-            else:
-                # Handle list of complex numbers
-                real_samples = [sample.real for sample in complex_samples]
-                imag_samples = [sample.imag for sample in complex_samples]
-            
-            return ReceiveAck(self.id, True, real_samples=real_samples, imag_samples=imag_samples)
-            
-        except Exception as e:
-            return ReceiveAck(self.id, False, error=f"Error receiving samples: {str(e)}")
+        return controller.rxCmd(self.id, self.ts)
     
     def to_dict(self) -> Dict[str, Any]:
         return super().to_dict()

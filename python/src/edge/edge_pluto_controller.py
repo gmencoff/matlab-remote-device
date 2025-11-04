@@ -1,7 +1,7 @@
 import threading, time
 from typing import Any
 from src.services.edge_service import EdgeService
-from src.commands.commands import Command, Ack, PropertySetController, ReceiveController
+from src.commands.commands import Command, Ack, PropertyAck, PropertySetController, ReceiveAck, ReceiveController
 
 class EdgePlutoController(PropertySetController, ReceiveController):
     """
@@ -14,6 +14,7 @@ class EdgePlutoController(PropertySetController, ReceiveController):
         self._edge_service = edge_service
         self._config = {}
         self._poll_s = poll_s
+        self._is_streaming = False
                 
         # Publish config will monitor pluto for changes and publish new configs
         self._publish_config()
@@ -21,15 +22,40 @@ class EdgePlutoController(PropertySetController, ReceiveController):
         # Subscribe to incoming commands
         self._edge_service.subscribe_commands(self._handle_command)
 
-    def setprop(self, name: str, value: Any):
-        setattr(self._pluto, name, value)
+    def setPropCmd(self, name: str, value: Any, id: str, ts: float) -> PropertyAck:
+        try:
+            # Set the property on the device
+            setattr(self._pluto, name, value)
+            
+            # Read back the actual value (might be different from requested)
+            actual_value = getattr(self._pluto, name)
+            
+            return PropertyAck(id, True, value=actual_value)
+        except AttributeError:
+            return PropertyAck(id, False, error=f"Property not found: {name}")
+        except Exception as e:
+            return PropertyAck(id, False, error=f"Error setting {name}: {str(e)}")
 
-    
-    def getprop(self, name: str) -> Any:
-        return getattr(self._pluto, name)
-
-    def rx(self):
-        return self._pluto.rx()
+    def rxCmd(self, id: str, ts: float) -> ReceiveAck:
+        try:
+            
+            # Get complex samples from device
+            complex_samples = self._pluto.rx()
+            
+            # Convert complex samples to real and imaginary parts
+            if hasattr(complex_samples, 'real') and hasattr(complex_samples, 'imag'):
+                # Handle numpy arrays or similar
+                real_samples = complex_samples.real.tolist() if hasattr(complex_samples.real, 'tolist') else list(complex_samples.real)
+                imag_samples = complex_samples.imag.tolist() if hasattr(complex_samples.imag, 'tolist') else list(complex_samples.imag)
+            else:
+                # Handle list of complex numbers
+                real_samples = [sample.real for sample in complex_samples]
+                imag_samples = [sample.imag for sample in complex_samples]
+            
+            return ReceiveAck(id, True, real_samples=real_samples, imag_samples=imag_samples)
+            
+        except Exception as e:
+            return ReceiveAck(id, False, error=f"Error receiving samples: {str(e)}")
     
     def _publish_config(self):
         """Monitor sdr for changes."""
