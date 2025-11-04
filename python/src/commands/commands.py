@@ -40,20 +40,6 @@ class PropertyAck(Ack):
         return data
 
 
-class MethodAck(Ack):
-    """Acknowledgment for method commands."""
-    
-    def __init__(self, command_id: str, ok: bool, result=None, error: Optional[str] = None):
-        super().__init__(command_id, ok, ack_type="method", error=error)
-        self.result = result
-    
-    def to_dict(self) -> Dict[str, Any]:
-        data = super().to_dict()
-        if self.ok and self.result is not None:
-            data["result"] = self.result
-        return data
-
-
 class ReceiveAck(Ack):
     """Acknowledgment for receive commands containing I/Q samples."""
     
@@ -91,6 +77,18 @@ class Command(ABC):
             "type": self.type
         }
 
+class PropertySetController:
+    """Controller for setting properties."""
+    
+    @abstractmethod
+    def setprop(self, name: str, value: Any):
+        """Set a property on the device."""
+        pass
+
+    @abstractmethod
+    def getprop(self, name: str) -> Any:
+        """Get a property from the device."""
+        pass
 
 class PropertyCommand(Command):
     """Command to set a property value."""
@@ -102,17 +100,15 @@ class PropertyCommand(Command):
         self.name = name
         self.value = value
     
-    def execute(self, device: Any) -> PropertyAck:
+    def execute(self, controller: PropertySetController) -> PropertyAck:
         """Execute the property set command on the device."""
-        if not hasattr(device, self.name):
-            return PropertyAck(self.id, False, error=f"Property not found: {self.name}")
         
         try:
             # Set the property on the device
-            setattr(device, self.name, self.value)
+            controller.setprop(self.name, self.value)
             
             # Read back the actual value (might be different from requested)
-            actual_value = getattr(device, self.name)
+            actual_value = controller.getprop(self.name)
             
             return PropertyAck(self.id, True, value=actual_value)
         except AttributeError:
@@ -133,46 +129,13 @@ class PropertyCommand(Command):
         resp = client_service.send_command(self.to_dict(), timeout=timeout)
         return PropertyAck(resp.get('id', self.id),resp.get('ok', False),resp.get('value'),error=resp.get('error'))
 
-class MethodCommand(Command):
-    """Command to call a method."""
+class ReceiveController:
+    """Controller for setting properties."""
     
-    def __init__(self, name: str, args=None, kwargs=None, id = None, ts = None):
-        id = id or str(uuid.uuid4())
-        ts = ts or time.time()
-        super().__init__("method", id, ts)
-        self.name = name
-        self.args = args or []
-        self.kwargs = kwargs or {}
-    
-    def execute(self, device: Any) -> MethodAck:
-        """Execute the method call command on the device."""
-        try:
-            # Get the method from the device
-            method = getattr(device, self.name)
-            
-            # Call the method
-            result = method(*self.args, **self.kwargs)
-            
-            return MethodAck(self.id, True, result=result)
-        except AttributeError:
-            return MethodAck(self.id, False, error=f"Method not found: {self.name}")
-        except Exception as e:
-            return MethodAck(self.id, False, error=f"Error calling {self.name}: {str(e)}")
-    
-    def to_dict(self) -> Dict[str, Any]:
-        data = super().to_dict()
-        data.update({
-            "name": self.name,
-            "args": self.args,
-            "kwargs": self.kwargs
-        })
-        return data
-    
-    def send(self, client_service: ClientService) -> MethodAck:
-        """Send the command using the provided client service."""
-        resp = client_service.send_command(self.to_dict())
-        return MethodAck(resp.get('id', self.id),resp.get('ok', False),resp.get('result'),resp.get('error'))
-
+    @abstractmethod
+    def rx(self) -> Any:
+        """Get receive samples from the device."""
+        pass
 
 class ReceiveCommand(Command):
     """Command to receive I/Q samples from the device."""
@@ -182,15 +145,12 @@ class ReceiveCommand(Command):
         ts = ts or time.time()
         super().__init__("receive", id, ts)
     
-    def execute(self, device: Any) -> ReceiveAck:
+    def execute(self, controller: ReceiveController) -> ReceiveAck:
         """Execute the receive command on the device."""
         try:
-            # Call rx method on the device
-            if not hasattr(device, 'rx'):
-                return ReceiveAck(self.id, False, error="Device does not have rx method")
             
             # Get complex samples from device
-            complex_samples = device.rx()
+            complex_samples = controller.rx()
             
             # Convert complex samples to real and imaginary parts
             if hasattr(complex_samples, 'real') and hasattr(complex_samples, 'imag'):
@@ -233,9 +193,6 @@ def decode_command(data: Dict[str, Any]) -> Command:
     if command_type == "property":
         cmd = PropertyCommand(data["name"], data["value"], data["id"], data["ts"])
         return cmd
-    elif command_type == "method":
-        cmd = MethodCommand(data["name"], data.get("args", []), data.get("kwargs", {}), data["id"], data["ts"])
-        return cmd
     elif command_type == "receive":
         cmd = ReceiveCommand(data["id"], data["ts"])
         return cmd
@@ -252,13 +209,6 @@ def decode_ack(data: Dict[str, Any]) -> Ack:
             data["id"], 
             data.get("ok", False),
             value=data.get("value"),
-            error=data.get("error")
-        )
-    elif ack_type == "method":
-        return MethodAck(
-            data["id"], 
-            data.get("ok", False),
-            result=data.get("result"),
             error=data.get("error")
         )
     elif ack_type == "receive":

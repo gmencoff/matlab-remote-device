@@ -1,8 +1,9 @@
 import threading, time
+from typing import Any
 from src.services.edge_service import EdgeService
-from src.commands.commands import Command, Ack
+from src.commands.commands import Command, Ack, PropertySetController, ReceiveController
 
-class EdgePlutoController:
+class EdgePlutoController(PropertySetController, ReceiveController):
     """
     Controller for a Pluto SDR device on the edge.
     Handles commands from remote clients and publishes device state.
@@ -19,6 +20,16 @@ class EdgePlutoController:
         
         # Subscribe to incoming commands
         self._edge_service.subscribe_commands(self._handle_command)
+
+    def setprop(self, name: str, value: Any):
+        setattr(self._pluto, name, value)
+
+    
+    def getprop(self, name: str) -> Any:
+        return getattr(self._pluto, name)
+
+    def rx(self):
+        return self._pluto.rx()
     
     def _publish_config(self):
         """Monitor sdr for changes."""
@@ -50,7 +61,7 @@ class EdgePlutoController:
     def _handle_command(self, cmd: Command) -> Ack:
         """Handle an incoming command."""
         # Execute the command on the device
-        ack = cmd.execute(self._pluto)
+        ack = cmd.execute(self)
         return ack
 
     def _config_props(self):
