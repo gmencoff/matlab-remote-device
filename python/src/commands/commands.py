@@ -39,7 +39,6 @@ class PropertyAck(Ack):
             data["value"] = self.value
         return data
 
-
 class ReceiveAck(Ack):
     """Acknowledgment for receive commands containing I/Q samples."""
     
@@ -55,6 +54,14 @@ class ReceiveAck(Ack):
             data["imag_samples"] = self.imag_samples
         return data
 
+class ReceiveStreamAck(Ack):
+    """Acknowledgment for property commands."""
+    
+    def __init__(self, command_id: str, ok: bool, error: Optional[str] = None):
+        super().__init__(command_id, ok, ack_type="receive_stream", error=error)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return super().to_dict()
 
 class Command(ABC):
     """Base class for all commands."""
@@ -146,6 +153,42 @@ class ReceiveCommand(Command):
             error=resp.get('error')
         )
 
+class ReceiveStreamController:
+    """Controller for setting properties."""
+    
+    @abstractmethod
+    def rxStreamCmd(self, duration: float, id: str, ts: float) -> ReceiveStreamAck:
+        """Stream receive samples from the device."""
+        pass
+
+class ReceiveStreamCommand(Command):
+    """Command to receive I/Q samples from the device."""
+    
+    def __init__(self, duration: float, id = None, ts = None):
+        id = id or str(uuid.uuid4())
+        ts = ts or time.time()
+        super().__init__("receive", id, ts)
+        self.duration = duration
+    
+    def execute(self, controller: ReceiveStreamController) -> ReceiveStreamAck:
+        """Execute the receive command on the device."""
+        return controller.rxStreamCmd(self.duration, self.id, self.ts)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        data = super().to_dict()
+        data.update({
+            "duration": self.duration
+        })
+        return data
+    
+    def send(self, client_service: ClientService, timeout = 5) -> ReceiveStreamAck:
+        """Send the command using the provided client service."""
+        resp = client_service.send_command(self.to_dict(), timeout=timeout)
+        return ReceiveStreamAck(
+            resp.get('id', self.id),
+            resp.get('ok', False),
+            error=resp.get('error')
+        )
 
 # Standalone decoder functions
 
@@ -160,6 +203,9 @@ def decode_command(data: Dict[str, Any]) -> Command:
         return cmd
     elif command_type == "receive":
         cmd = ReceiveCommand(data["id"], data["ts"])
+        return cmd
+    elif command_type == "receive_stream":
+        cmd = ReceiveStreamCommand(data["duration"], data["id"], data["ts"])
         return cmd
     else:
         raise ValueError(f"Unknown command type: {command_type}")
@@ -182,6 +228,12 @@ def decode_ack(data: Dict[str, Any]) -> Ack:
             data.get("ok", False),
             real_samples=data.get("real_samples"),
             imag_samples=data.get("imag_samples"),
+            error=data.get("error")
+        )
+    elif ack_type == "receive_stream":
+        return ReceiveStreamAck(
+            data["id"], 
+            data.get("ok", False),
             error=data.get("error")
         )
     else:  # generic or unknown type

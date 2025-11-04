@@ -1,9 +1,9 @@
 import threading, time
 from typing import Any
 from src.services.edge_service import EdgeService
-from src.commands.commands import Command, Ack, PropertyAck, PropertySetController, ReceiveAck, ReceiveController
+from src.commands.commands import Command, Ack, PropertyAck, PropertySetController, ReceiveAck, ReceiveController, ReceiveStreamAck, ReceiveStreamController
 
-class EdgePlutoController(PropertySetController, ReceiveController):
+class EdgePlutoController(PropertySetController, ReceiveController, ReceiveStreamController):
     """
     Controller for a Pluto SDR device on the edge.
     Handles commands from remote clients and publishes device state.
@@ -56,6 +56,10 @@ class EdgePlutoController(PropertySetController, ReceiveController):
             
         except Exception as e:
             return ReceiveAck(id, False, error=f"Error receiving samples: {str(e)}")
+
+    def rxStreamCmd(self, duration: float, id: str, ts: float) -> ReceiveStreamAck:
+        # TODO: Start streaming samples here
+        return ReceiveStreamAck(id, True)
     
     def _publish_config(self):
         """Monitor sdr for changes."""
