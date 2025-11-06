@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import string
 from typing import Dict, Any, Callable
 from src.commands.commands import Command, Ack
 
@@ -6,6 +7,11 @@ class EdgeService(ABC):
     @abstractmethod
     def publish_config(self, config: Dict[str, Any]) -> None:
         """Publish the current configuration to be read by clients."""
+        pass
+
+    @abstractmethod
+    def publish_data(self, topic: string, data: Dict[str, Any]) -> None:
+        """Publish data to some topic."""
         pass
 
     @abstractmethod
