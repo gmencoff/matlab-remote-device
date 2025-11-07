@@ -56,9 +56,9 @@ classdef RemotePluto < handle
         end
 
         function data = getStreamData(obj)
-            data = obj.clientService.getTopicData('rx_stream', obj.rxStreamLastTimestamp);
-            obj.rxStreamLastTimestamp = data.timestamp;
-            return data.data;
+            response = obj.clientService.getTopicData('rx_stream', obj.rxStreamLastTimestamp);
+            obj.rxStreamLastTimestamp = response.timestamp;
+            data = response.data.real_samples + 1i*response.data.imag_samples;
         end
         
         function disp(obj)
