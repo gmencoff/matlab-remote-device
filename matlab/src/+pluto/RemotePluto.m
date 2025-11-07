@@ -4,6 +4,7 @@ classdef RemotePluto < handle
     properties (Access = private)
         clientService
         state
+        rxStreamLastTimestamp = 0;
     end
     
     methods
@@ -52,6 +53,12 @@ classdef RemotePluto < handle
         function startRxStream(obj, duration)
             cmd = commands.ReceiveStreamCommand(duration);
             response = obj.clientService.sendCommand(cmd, 500);
+        end
+
+        function data = getStreamData(obj)
+            data = obj.clientService.getTopicData('rx_stream', obj.rxStreamLastTimestamp);
+            obj.rxStreamLastTimestamp = data.timestamp;
+            return data.data;
         end
         
         function disp(obj)
