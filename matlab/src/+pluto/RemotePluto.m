@@ -48,6 +48,11 @@ classdef RemotePluto < handle
             response = obj.clientService.sendCommand(cmd, 500);
             result = response.real_samples + 1i*response.imag_samples;
         end
+
+        function startRxStream(obj, duration)
+            cmd = commands.ReceiveStreamCommand(duration);
+            response = obj.clientService.sendCommand(cmd, 500);
+        end
         
         function disp(obj)
             % Custom display method
