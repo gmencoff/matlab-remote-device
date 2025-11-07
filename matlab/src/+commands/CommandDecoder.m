@@ -38,6 +38,9 @@ classdef CommandDecoder
                     end
                     ack = commands.MethodAck(data.id, ok, result, error_msg);
                     
+                case 'receive_stream'
+                    ack = commands.ReceiveStreamAck(data.id, ok, error_msg);
+                    
                 otherwise
                     error('Unrecognized Ack');
             end
