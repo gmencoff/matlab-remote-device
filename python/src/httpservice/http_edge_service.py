@@ -27,6 +27,8 @@ class HttpEdgeService(EdgeService):
         self.set_config_url = "https://setconfig-tgyovhjiqq-uc.a.run.app"
         self.get_command_url = "https://getcommand-tgyovhjiqq-uc.a.run.app"
         self.send_ack_url = "https://sendack-tgyovhjiqq-uc.a.run.app"
+        self.activate_topic_url = "https://activatetopic-tgyovhjiqq-uc.a.run.app"
+        self.set_topic_data_url = "https://settopicdata-tgyovhjiqq-uc.a.run.app"
 
     def publish_config(self, config: Dict[str, Any]) -> None:
         """
@@ -181,6 +183,121 @@ class HttpEdgeService(EdgeService):
             print(f"Network error while sending ack for command {command_id}: {str(e)}")
         except Exception as e:
             print(f"Unexpected error while sending ack for command {command_id}: {str(e)}")
+
+    def activate_topic(self, topicid: str) -> None:
+        """
+        Activate a topic using the activateTopic Firebase function.
+        
+        Args:
+            topicid: ID of the topic to activate
+        """
+        try:
+            payload = {
+                "deviceId": self.device_id,
+                "topicId": topicid,
+                "active": True
+            }
+            
+            response = requests.post(
+                self.activate_topic_url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                print(f"Topic {topicid} activated successfully for device {self.device_id}: {result.get('message', 'OK')}")
+            else:
+                error_msg = f"Failed to activate topic {topicid}. Status: {response.status_code}, Response: {response.text}"
+                print(f"Error: {error_msg}")
+                raise Exception(error_msg)
+                
+        except requests.exceptions.RequestException as e:
+            error_msg = f"Network error while activating topic {topicid}: {str(e)}"
+            print(f"Error: {error_msg}")
+            raise Exception(error_msg)
+        except Exception as e:
+            error_msg = f"Unexpected error while activating topic {topicid}: {str(e)}"
+            print(f"Error: {error_msg}")
+            raise Exception(error_msg)
+
+    def deactivate_topic(self, topicid: str) -> None:
+        """
+        Deactivate a topic using the activateTopic Firebase function.
+        
+        Args:
+            topicid: ID of the topic to deactivate
+        """
+        try:
+            payload = {
+                "deviceId": self.device_id,
+                "topicId": topicid,
+                "active": False
+            }
+            
+            response = requests.post(
+                self.activate_topic_url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                print(f"Topic {topicid} deactivated successfully for device {self.device_id}: {result.get('message', 'OK')}")
+            else:
+                error_msg = f"Failed to deactivate topic {topicid}. Status: {response.status_code}, Response: {response.text}"
+                print(f"Error: {error_msg}")
+                raise Exception(error_msg)
+                
+        except requests.exceptions.RequestException as e:
+            error_msg = f"Network error while deactivating topic {topicid}: {str(e)}"
+            print(f"Error: {error_msg}")
+            raise Exception(error_msg)
+        except Exception as e:
+            error_msg = f"Unexpected error while deactivating topic {topicid}: {str(e)}"
+            print(f"Error: {error_msg}")
+            raise Exception(error_msg)
+
+    def publish_topic_data(self, topicid: str, data: Dict[str, Any]) -> None:
+        """
+        Publish data to a topic using the setTopicData Firebase function.
+        
+        Args:
+            topicid: ID of the topic to publish data to
+            data: Data to publish to the topic
+        """
+        try:
+            payload = {
+                "deviceId": self.device_id,
+                "topicId": topicid,
+                "data": data
+            }
+            
+            response = requests.post(
+                self.set_topic_data_url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                print(f"Data published successfully to topic {topicid} for device {self.device_id}: {result.get('message', 'OK')}")
+            else:
+                error_msg = f"Failed to publish data to topic {topicid}. Status: {response.status_code}, Response: {response.text}"
+                print(f"Error: {error_msg}")
+                raise Exception(error_msg)
+                
+        except requests.exceptions.RequestException as e:
+            error_msg = f"Network error while publishing data to topic {topicid}: {str(e)}"
+            print(f"Error: {error_msg}")
+            raise Exception(error_msg)
+        except Exception as e:
+            error_msg = f"Unexpected error while publishing data to topic {topicid}: {str(e)}"
+            print(f"Error: {error_msg}")
+            raise Exception(error_msg)
 
     def stop(self) -> None:
         """
