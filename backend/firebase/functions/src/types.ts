@@ -53,3 +53,37 @@ export interface CommandRequest {
   commandId: string;
   command: any; // The actual command payload
 }
+
+// Topic data document structure
+export interface TopicDataDocument {
+  data: any; // The actual topic data from the caller
+  timestamp: number;
+  active: boolean; // Whether this topic is active
+}
+
+// setTopicData request
+export interface SetTopicDataRequest {
+  deviceId: string;
+  topicId: string;
+  data: any; // The topic data to store
+}
+
+// getTopicData request
+export interface GetTopicDataRequest {
+  deviceId: string;
+  topicId: string;
+  lastTimestamp: number; // Timestamp of the last data message received
+}
+
+// getTopicData response
+export interface GetTopicDataResponse {
+  data: any; // The topic data
+  timestamp: number;
+}
+
+// activateTopic request
+export interface ActivateTopicRequest {
+  deviceId: string;
+  topicId: string;
+  active: boolean; // Whether to activate or deactivate the topic
+}

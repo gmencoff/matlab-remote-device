@@ -19,6 +19,9 @@ export {sendCommand} from "./sendCommand";
 export {setConfig} from "./setConfig";
 export {getCommand} from "./getCommand";
 export {sendAck} from "./sendAck";
+export {setTopicData} from "./setTopicData";
+export {getTopicData} from "./getTopicData";
+export {activateTopic} from "./activateTopic";
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
