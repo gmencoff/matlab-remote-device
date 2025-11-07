@@ -46,7 +46,7 @@ class EdgePlutoController(PropertySetController, ReceiveController, ReceiveStrea
         except Exception as e:
             return ReceiveAck(id, False, error=f"Error receiving samples: {str(e)}")
 
-    def rxStreamCmd(self, duration: float, id: str, ts: float) -> ReceiveStreamAck:
+    def rxStreamCmd(self, duration: float, cmdid: str) -> ReceiveStreamAck:
         self._edge_service.activate_topic("rx_stream")
         def loop():
             start_time = time.time()
@@ -57,12 +57,11 @@ class EdgePlutoController(PropertySetController, ReceiveController, ReceiveStrea
                     "real_samples": real_samples,
                     "imag_samples": imag_samples
                 })
-                time.sleep(duration)
 
             self._edge_service.deactivate_topic("rx_stream")
 
         threading.Thread(target=loop, daemon=True).start()
-        return ReceiveStreamAck(id, True)
+        return ReceiveStreamAck(cmdid, True)
     
     def _publish_config(self):
         """Monitor sdr for changes."""

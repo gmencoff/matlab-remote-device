@@ -55,7 +55,7 @@ class ReceiveAck(Ack):
         return data
 
 class ReceiveStreamAck(Ack):
-    """Acknowledgment for property commands."""
+    """Acknowledgment for receive stream commands."""
     
     def __init__(self, command_id: str, ok: bool, error: Optional[str] = None):
         super().__init__(command_id, ok, ack_type="receive_stream", error=error)
@@ -157,7 +157,7 @@ class ReceiveStreamController:
     """Controller for setting properties."""
     
     @abstractmethod
-    def rxStreamCmd(self, duration: float) -> ReceiveStreamAck:
+    def rxStreamCmd(self, duration: float, cmdid: str) -> ReceiveStreamAck:
         """Stream receive samples from the device."""
         pass
 
@@ -167,12 +167,12 @@ class ReceiveStreamCommand(Command):
     def __init__(self, duration: float, id = None, ts = None):
         id = id or str(uuid.uuid4())
         ts = ts or time.time()
-        super().__init__("receive", id, ts)
+        super().__init__("receive_stream", id, ts)
         self.duration = duration
     
     def execute(self, controller: ReceiveStreamController) -> ReceiveStreamAck:
         """Execute the receive command on the device."""
-        return controller.rxStreamCmd(self.duration)
+        return controller.rxStreamCmd(self.duration, self.id)
     
     def to_dict(self) -> Dict[str, Any]:
         data = super().to_dict()
