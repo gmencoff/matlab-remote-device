@@ -91,5 +91,58 @@ classdef FunctionCaller < handle
                 end
             end
         end
+        
+        function topicData = getTopicData(obj, topicId, lastTimestamp)
+            % Firebase function URL
+            baseUrl = 'https://gettopicdata-tgyovhjiqq-uc.a.run.app';
+            
+            % Prepare the JSON payload
+            payload = struct();
+            payload.deviceId = obj.DeviceId;
+            payload.topicId = topicId;
+            payload.lastTimestamp = lastTimestamp;
+            
+            % Convert to JSON string
+            jsonPayload = jsonencode(payload);
+            
+            % Set up HTTP request with longer timeout (65 seconds)
+            % The server waits up to 60 seconds for new data
+            options = weboptions(...
+                'MediaType', 'application/json', ...
+                'RequestMethod', 'POST', ...
+                'Timeout', 65, ...
+                'CharacterEncoding', 'UTF-8');
+            
+            try
+                % Wait until no request is in process
+                while obj.RequestInProcess
+                    pause(0.01);
+                end
+                
+                % Make the HTTP request
+                obj.RequestInProcess = true;
+                response = webwrite(baseUrl, jsonPayload, options);
+                obj.RequestInProcess = false;
+                
+                % Return the topic data
+                topicData = response;
+                
+            catch ME
+                obj.RequestInProcess = false;
+                
+                % Handle specific errors
+                if contains(ME.message, '404')
+                    error('Topic not found or inactive');
+                elseif contains(ME.message, '408')
+                    error('Timeout waiting for topic data update');
+                elseif contains(ME.message, '400')
+                    error('Invalid request: Missing or invalid parameters');
+                elseif contains(ME.message, '500')
+                    error('Server error: Please try again later');
+                else
+                    error('Network error: %s', ME.message);
+                end
+            end
+        end
     end
 end

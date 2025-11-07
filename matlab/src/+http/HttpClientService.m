@@ -31,6 +31,10 @@ classdef HttpClientService < client.ClientService
                                   'TimerFcn', @(~,~)pollConfig(fcnCaller));
             start(obj.ConfigTimer);
         end
+        
+        function topicData = getTopicData(obj, topicId, lastTimestamp)
+            topicData = obj.FunctionCaller.getTopicData(topicId, lastTimestamp);
+        end
 
         function delete(obj)
             if ~isempty(obj.ConfigTimer)

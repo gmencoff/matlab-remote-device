@@ -14,5 +14,13 @@ classdef (Abstract) ClientService < handle
         % Register a callback for config changes
         % Args:
         %   callback - function handle that accepts config struct
+        
+        topicData = getTopicData(obj, topicId, lastTimestamp)
+        % Get topic data, waiting for updates if necessary
+        % Args:
+        %   topicId - string identifying the topic
+        %   lastTimestamp - last known timestamp (in milliseconds)
+        % Returns:
+        %   topicData - struct containing 'data' and 'timestamp' fields
     end
 end
