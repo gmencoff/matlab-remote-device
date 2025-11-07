@@ -39,18 +39,7 @@ class EdgePlutoController(PropertySetController, ReceiveController, ReceiveStrea
     def rxCmd(self, id: str, ts: float) -> ReceiveAck:
         try:
             
-            # Get complex samples from device
-            complex_samples = self._pluto.rx()
-            
-            # Convert complex samples to real and imaginary parts
-            if hasattr(complex_samples, 'real') and hasattr(complex_samples, 'imag'):
-                # Handle numpy arrays or similar
-                real_samples = complex_samples.real.tolist() if hasattr(complex_samples.real, 'tolist') else list(complex_samples.real)
-                imag_samples = complex_samples.imag.tolist() if hasattr(complex_samples.imag, 'tolist') else list(complex_samples.imag)
-            else:
-                # Handle list of complex numbers
-                real_samples = [sample.real for sample in complex_samples]
-                imag_samples = [sample.imag for sample in complex_samples]
+            real_samples, imag_samples = self._rx_samples();
             
             return ReceiveAck(id, True, real_samples=real_samples, imag_samples=imag_samples)
             
@@ -58,7 +47,21 @@ class EdgePlutoController(PropertySetController, ReceiveController, ReceiveStrea
             return ReceiveAck(id, False, error=f"Error receiving samples: {str(e)}")
 
     def rxStreamCmd(self, duration: float, id: str, ts: float) -> ReceiveStreamAck:
-        # TODO: Start streaming samples here
+        self._edge_service.activate_topic("rx_stream")
+        def loop():
+            start_time = time.time()
+            end_time = start_time + duration
+            while time.time() < end_time:
+                real_samples, imag_samples = self._rx_samples()
+                self._edge_service.publish_topic_data("rx_stream", {
+                    "real_samples": real_samples,
+                    "imag_samples": imag_samples
+                })
+                time.sleep(duration)
+
+            self._edge_service.deactivate_topic("rx_stream")
+
+        threading.Thread(target=loop, daemon=True).start()
         return ReceiveStreamAck(id, True)
     
     def _publish_config(self):
@@ -93,6 +96,23 @@ class EdgePlutoController(PropertySetController, ReceiveController, ReceiveStrea
         # Execute the command on the device
         ack = cmd.execute(self)
         return ack
+
+    def _rx_samples(self):
+            # Get complex samples from device
+            complex_samples = self._pluto.rx()
+            
+            # Convert complex samples to real and imaginary parts
+            if hasattr(complex_samples, 'real') and hasattr(complex_samples, 'imag'):
+                # Handle numpy arrays or similar
+                real_samples = complex_samples.real.tolist() if hasattr(complex_samples.real, 'tolist') else list(complex_samples.real)
+                imag_samples = complex_samples.imag.tolist() if hasattr(complex_samples.imag, 'tolist') else list(complex_samples.imag)
+            else:
+                # Handle list of complex numbers
+                real_samples = [sample.real for sample in complex_samples]
+                imag_samples = [sample.imag for sample in complex_samples]
+
+            return real_samples, imag_samples
+
 
     def _config_props(self):
         return [

@@ -157,7 +157,7 @@ class ReceiveStreamController:
     """Controller for setting properties."""
     
     @abstractmethod
-    def rxStreamCmd(self, duration: float, id: str, ts: float) -> ReceiveStreamAck:
+    def rxStreamCmd(self, duration: float) -> ReceiveStreamAck:
         """Stream receive samples from the device."""
         pass
 
@@ -172,7 +172,7 @@ class ReceiveStreamCommand(Command):
     
     def execute(self, controller: ReceiveStreamController) -> ReceiveStreamAck:
         """Execute the receive command on the device."""
-        return controller.rxStreamCmd(self.duration, self.id, self.ts)
+        return controller.rxStreamCmd(self.duration)
     
     def to_dict(self) -> Dict[str, Any]:
         data = super().to_dict()
