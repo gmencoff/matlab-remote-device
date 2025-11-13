@@ -1,5 +1,6 @@
 import threading, time
 from typing import Any
+import numpy as np
 from src.services.edge_service import EdgeService
 from src.commands.commands import Command, Ack, PropertyAck, PropertySetController, ReceiveAck, ReceiveController, ReceiveStreamAck
 
@@ -8,12 +9,13 @@ class EdgePhaserController(PropertySetController, ReceiveController):
     Controller for the Phaser board on the edge.
     """
     
-    def __init__(self, pluto_sdr, edge_service: EdgeService, poll_s: float = 1.0):
+    def __init__(self, phaser, edge_service: EdgeService, poll_s: float = 1.0):
+        self._phaser = phaser
         self._edge_service = edge_service
         self._config = {}
         self._poll_s = poll_s
                 
-        # Publish config will monitor pluto for changes and publish new configs
+        # Publish config will monitor phaser for changes and publish new configs
         self._publish_config()
         
         # Subscribe to incoming commands
@@ -21,13 +23,11 @@ class EdgePhaserController(PropertySetController, ReceiveController):
 
     def setPropCmd(self, name: str, value: Any, id: str, ts: float) -> PropertyAck:
         try:
-            #TODO: Implement this - the command will need to be set on the underlying device
-
             # Set the property on the device
-            #setattr(self._pluto, name, value)
+            setattr(self._phaser, name, value)
             
             # Read back the actual value (might be different from requested)
-            #actual_value = getattr(self._pluto, name)
+            actual_value = getattr(self._phaser, name)
             
             return PropertyAck(id, True, value=actual_value)
         except AttributeError:
@@ -46,7 +46,7 @@ class EdgePhaserController(PropertySetController, ReceiveController):
             return ReceiveAck(id, False, error=f"Error receiving samples: {str(e)}")
     
     def _publish_config(self):
-        """Monitor sdr for changes."""
+        """Monitor device for changes."""
         def loop():
             config = None
             while True:
@@ -60,18 +60,15 @@ class EdgePhaserController(PropertySetController, ReceiveController):
 
     def _get_current_config(self):
         config = {}
-        config["rx_lo"] = 2.4e9
-        # TODO: Implement this - get the current config from the underlying devices
         # Get all public properties from the device
-        # for attr_name in self._config_props():
-        #     # Skip private attributes and methods
-        #     try:
-        #         config[attr_name] = getattr(self._pluto, attr_name)
-        #     except Exception:
-        #         # Skip properties that can't be read
-        #         pass
+        for attr_name in self._config_props():
+            # Skip private attributes and methods
+            try:
+                config[attr_name] = getattr(self._phaser, attr_name)
+            except Exception:
+                # Skip properties that can't be read
+                pass
             
-        # return config
         return config
     
     
@@ -82,37 +79,25 @@ class EdgePhaserController(PropertySetController, ReceiveController):
         return ack
 
     def _rx_samples(self):
-            # Get complex samples from device
-            # TODO: Implement this - get the samples from the underlying devices
-            #complex_samples = self._pluto.rx()
-            
-            # Convert complex samples to real and imaginary parts
-            if hasattr(complex_samples, 'real') and hasattr(complex_samples, 'imag'):
-                # Handle numpy arrays or similar
-                real_samples = complex_samples.real.tolist() if hasattr(complex_samples.real, 'tolist') else list(complex_samples.real)
-                imag_samples = complex_samples.imag.tolist() if hasattr(complex_samples.imag, 'tolist') else list(complex_samples.imag)
-            else:
-                # Handle list of complex numbers
-                real_samples = [sample.real for sample in complex_samples]
-                imag_samples = [sample.imag for sample in complex_samples]
+        # Get complex samples from device
+        # TODO: Implement this - get the samples from the underlying devices
+        complex_samples = self._phaser.rx()
+        
+        arr = np.asarray(complex_samples)
 
-            return real_samples, imag_samples
+        # Ensure it's complex dtype; if it's a list-of-lists Python may infer object dtype,
+        # so we convert manually.
+        if arr.dtype == object:
+            arr = arr.astype(np.complex64)
+
+        real_samples = arr.real.tolist()
+        imag_samples = arr.imag.tolist()
+        return real_samples, imag_samples
 
 
     def _config_props(self):
         # TODO: Implement this - get the config properties from the underlying devices
-        # return [
-        #     "rx_lo",
-        #     "rx_buffer_size",
-        #     "rx_hardwaregain_chan0",
-        #     "rx_rf_bandwidth",
-        #     "gain_control_mode_chan0",
-        #     "tx_lo",
-        #     "tx_hardwaregain_chan0",
-        #     "tx_rf_bandwidth",
-        #     "tx_cyclic_buffer",
-        #     "filter",
-        #     "sample_rate",
-        #     "loopback"
-        # ]
-        return []
+        return [
+            "rx_buffer_size",
+            "sample_rate"
+        ]
