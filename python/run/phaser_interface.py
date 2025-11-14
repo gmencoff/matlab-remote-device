@@ -8,8 +8,6 @@ class PhaserInterface:
         self._sdr = sdr
         
     def rx(self):
-        data = self._sdr.rx()
-        print(data)
         return self._sdr.rx()
         
     @property
