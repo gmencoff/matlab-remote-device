@@ -90,5 +90,6 @@ class EdgePhaserController(PropertySetController, ReceiveController):
         # TODO: Implement this - get the config properties from the underlying devices
         return [
             "rx_buffer_size",
-            "sample_rate"
+            "sample_rate",
+            "operating_frequency"
         ]

@@ -25,4 +25,15 @@ class PhaserInterface:
     @rx_buffer_size.setter
     def rx_buffer_size(self, value):
         self._sdr.rx_buffer_size = int(value)
+        
+    @property
+    def operating_frequency(self):
+        return self._phaser.SignalFreq
+    
+    @operating_frequency.setter
+    def operating_frequency(self, value):
+        self._phaser.SignalFreq = int(value)
+        self._phaser.frequency = (
+            self._phaser.SignalFreq + self._sdr.rx_lo
+        ) // 4  # PLL feedback via /4 VCO output  
     
