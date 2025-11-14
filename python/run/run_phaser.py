@@ -50,7 +50,7 @@ def main():
             poll_s=poll_interval
         )
         
-        print("\n🚀Pluto device is now running!")
+        print("    Phaser device is now running!")
         print(f"   Device ID: {device_id}")
         print(f"   Polling interval: {poll_interval}s")
         print("   Listening for commands via Firebase...")
