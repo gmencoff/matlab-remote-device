@@ -3,6 +3,7 @@ from typing import Any
 import numpy as np
 from src.services.edge_service import EdgeService
 from src.commands.commands import Command, Ack, PropertyAck, PropertySetController, ReceiveAck, ReceiveController, ReceiveStreamAck
+from src.data.complex_number import ComplexNumberArray
 
 class EdgePhaserController(PropertySetController, ReceiveController):
     """
@@ -38,10 +39,9 @@ class EdgePhaserController(PropertySetController, ReceiveController):
     def rxCmd(self, id: str, ts: float) -> ReceiveAck:
         try:
             
-            real_samples, imag_samples = self._rx_samples();
+            data = self._rx_samples();
             
-            return ReceiveAck(id, True, real_samples=real_samples, imag_samples=imag_samples)
-            
+            return ReceiveAck(id, True, data=data)
         except Exception as e:
             return ReceiveAck(id, False, error=f"Error receiving samples: {str(e)}")
     
@@ -81,18 +81,9 @@ class EdgePhaserController(PropertySetController, ReceiveController):
     def _rx_samples(self):
         # Get complex samples from device
         # TODO: Implement this - get the samples from the underlying devices
+        # Read from device
         complex_samples = self._phaser.rx()
-        
-        arr = np.asarray(complex_samples)
-
-        # Ensure it's complex dtype; if it's a list-of-lists Python may infer object dtype,
-        # so we convert manually.
-        if arr.dtype == object:
-            arr = arr.astype(np.complex64)
-
-        real_samples = arr.real.tolist()
-        imag_samples = arr.imag.tolist()
-        return real_samples, imag_samples
+        return ComplexNumberArray(complex_samples=complex_samples)
 
 
     def _config_props(self):

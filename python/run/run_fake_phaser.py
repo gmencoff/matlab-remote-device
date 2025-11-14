@@ -12,12 +12,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import time
 import signal
-from typing import Optional
 from fakephaser import FakePhaser
 from src.edge.edge_phaser_controller import EdgePhaserController
 from src.httpservice.http_edge_service import HttpEdgeService
-from fake_edge_service import FakeEdgeService
-from start_phaser_interface import startPhaserInterface
 
 
 def main():

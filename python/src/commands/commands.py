@@ -3,6 +3,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 from src.services.client_service import ClientService
+from src.data.complex_number import ComplexNumberArray
 
 class Ack:
     """Base class for command acknowledgments."""
@@ -42,16 +43,14 @@ class PropertyAck(Ack):
 class ReceiveAck(Ack):
     """Acknowledgment for receive commands containing I/Q samples."""
     
-    def __init__(self, command_id: str, ok: bool, real_samples=None, imag_samples=None, error: Optional[str] = None):
+    def __init__(self, command_id: str, ok: bool, data: ComplexNumberArray = None, error: Optional[str] = None):
         super().__init__(command_id, ok, ack_type="receive", error=error)
-        self.real_samples = real_samples
-        self.imag_samples = imag_samples
+        self.data = data
     
     def to_dict(self) -> Dict[str, Any]:
         data = super().to_dict()
-        if self.ok and self.real_samples is not None and self.imag_samples is not None:
-            data["real_samples"] = self.real_samples
-            data["imag_samples"] = self.imag_samples
+        if self.ok and self.data is not None:
+            data["data"] = self.data.to_dict()
         return data
 
 class ReceiveStreamAck(Ack):
@@ -148,8 +147,7 @@ class ReceiveCommand(Command):
         return ReceiveAck(
             resp.get('id', self.id),
             resp.get('ok', False),
-            real_samples=resp.get('real_samples'),
-            imag_samples=resp.get('imag_samples'),
+            data=resp.get('data'),
             error=resp.get('error')
         )
 
@@ -226,8 +224,7 @@ def decode_ack(data: Dict[str, Any]) -> Ack:
         return ReceiveAck(
             data["id"], 
             data.get("ok", False),
-            real_samples=data.get("real_samples"),
-            imag_samples=data.get("imag_samples"),
+            data=data.get("data"),
             error=data.get("error")
         )
     elif ack_type == "receive_stream":
