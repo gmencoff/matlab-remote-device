@@ -4,7 +4,7 @@ close all;
 
 %% Create remote pluto
 
-id = 'fake-pluto-001';
+id = 'mVDaisJOlg';
 sdr = pluto.RemotePluto(id);
 
 %% Sequential Receive
