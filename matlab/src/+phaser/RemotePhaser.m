@@ -31,6 +31,11 @@ classdef RemotePhaser < handle
         end
         
         function set(obj, name, value)
+            % If the value is unchanged, return
+            if isequal(get(obj,name),value)
+                return
+            end
+            
             % Set a property value
             cmd = commands.PropertyCommand(name, value);
             response = obj.clientService.sendCommand(cmd, 500);

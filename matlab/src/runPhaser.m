@@ -5,14 +5,14 @@ clc;
 
 %% Create remote phaser
 
-id = 'pNjYuHKCaF';
+id = 'bqmKsPgoCL';
 sdr = phaser.RemotePhaser(id);
 
 %% Find HB100 Fc
 
 f_start = 10.2e9;
 f_stop = 10.6e9;
-f_step = 5e6;
+f_step = 10e6;
 f_test = f_start:f_step:f_stop;
 nsamples = 100;
 nfreqs = length(f_test);
@@ -31,9 +31,31 @@ for iFreq = 1:nfreqs
     fstep = fs/nsamples;
     fspanStop = fs/2-fstep;
     fspan = fc-(fspanStart:fstep:fspanStop);
+    resp = mag2db(fftshift(abs(fft(data(:,1)))));
     allfreqs(iFreq,:) = fspan;
-    allresps(iFreq,:) = mag2db(fftshift(abs(fft(data(:,1))))); % Store the received data for the current frequency
+    allresps(iFreq,:) = resp;
+    plot(ax,fspan,resp);
+    drawnow;
 end
 
-plot(allfreqs',allresps');
 freq = allfreqs(allresps == max(allresps,[],"all"));
+
+%% Run the receiver at the HB100 frequency
+
+nruns = 100;
+nsamples = 100;
+set(sdr,'rx_buffer_size',nsamples);
+set(sdr,'operating_frequency',freq);
+ax = axes(figure);
+
+for iRun = 1:nruns
+    data = sdr.rx();
+    fs = get(sdr,'sample_rate');
+    fspanStart = -fs/2;
+    fstep = fs/nsamples;
+    fspanStop = fs/2-fstep;
+    fspan = freq-(fspanStart:fstep:fspanStop);
+    resp = mag2db(fftshift(abs(fft(data(:,1)))));
+    plot(ax,fspan,resp);
+    drawnow;
+end
