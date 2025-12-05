@@ -2,19 +2,13 @@ import express, { Request, Response, NextFunction } from "express";
 import http from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { randomUUID } from "crypto";
+import { ConfigDocument, CommandDocument, AckDocument, CommandRequest } from "./types";
 
 // ---------- Types ----------
 
 interface DeviceHelloMessage {
   type: "hello";
   deviceId: string;
-}
-
-interface CommandMessage {
-  type: "command";
-  requestId: string;
-  command: string;
-  params: Record<string, unknown>;
 }
 
 interface DeviceResponseMessage {
@@ -33,11 +27,10 @@ interface PendingRequest {
   timeout: NodeJS.Timeout;
 }
 
-// HTTP request from MATLAB
-interface SendCommandBody {
-  deviceId: string;
-  command: string;
-  params?: Record<string, unknown>;
+interface DeviceInfo {
+    status: string;
+    lastSeen: number;
+    config: any;
 }
 
 // ---------- In-memory state (single instance only) ----------
@@ -49,7 +42,7 @@ const deviceConnections = new Map<string, WebSocket>();
 const pendingRequests = new Map<string, PendingRequest>();
 
 // deviceId -> last status (optional, for health/debug)
-const deviceInfo = new Map<string, { status: string; lastSeen: number }>();
+const deviceInfo = new Map<string, DeviceInfo>();
 
 // ---------- Express app ----------
 
@@ -84,15 +77,15 @@ app.get("/health", (req: Request, res: Response) => {
 
 // HTTP POST /sendCommand  (MATLAB calls this)
 app.post("/sendCommand", async (req: Request, res: Response) => {
-  const body: SendCommandBody = req.body;
+  const body: CommandRequest = req.body;
 
-  if (!body || typeof body.deviceId !== "string" || typeof body.command !== "string") {
+  if (!body || typeof body.deviceId !== "string" || typeof body.commandId !== "string") {
     return res.status(400).json({ status: "error", error: "Invalid payload" });
   }
 
   const deviceId = body.deviceId;
+  const commandId = body.commandId;
   const command = body.command;
-  const params = body.params ?? {};
 
   const ws = deviceConnections.get(deviceId);
   if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -102,29 +95,20 @@ app.post("/sendCommand", async (req: Request, res: Response) => {
     });
   }
 
-  const requestId = randomUUID();
-
   // Create a promise for the response from the device
   const responsePromise = new Promise<DeviceResponseMessage>((resolve, reject) => {
     const timeoutMs = 5000; // 5 seconds
 
     const timeout = setTimeout(() => {
-      pendingRequests.delete(requestId);
+      pendingRequests.delete(commandId);
       reject(new Error("Timeout waiting for device response"));
     }, timeoutMs);
 
-    pendingRequests.set(requestId, { resolve, reject, timeout });
+    pendingRequests.set(commandId, { resolve, reject, timeout });
   });
 
-  const message: CommandMessage = {
-    type: "command",
-    requestId,
-    command,
-    params
-  };
-
   try {
-    ws.send(JSON.stringify(message));
+    ws.send(JSON.stringify(body));
 
     const response = await responsePromise;
 
