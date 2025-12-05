@@ -1,28 +1,12 @@
 import express, { Request, Response, NextFunction } from "express";
 import http from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { randomUUID } from "crypto";
-import { ConfigDocument, CommandDocument, AckDocument, CommandRequest } from "./types";
+import { DeviceCommandAckMessage, CommandRequest, GetConfigRequest, IncomingDeviceMessage, DeviceSetConfigMessage } from "./types";
 
 // ---------- Types ----------
 
-interface DeviceHelloMessage {
-  type: "hello";
-  deviceId: string;
-}
-
-interface DeviceResponseMessage {
-  type: "response";
-  requestId: string;
-  status: "ok" | "error";
-  result?: unknown;
-  error?: string;
-}
-
-type IncomingDeviceMessage = DeviceHelloMessage | DeviceResponseMessage | any;
-
 interface PendingRequest {
-  resolve: (value: DeviceResponseMessage) => void;
+  resolve: (value: DeviceCommandAckMessage) => void;
   reject: (reason?: unknown) => void;
   timeout: NodeJS.Timeout;
 }
@@ -30,7 +14,7 @@ interface PendingRequest {
 interface DeviceInfo {
     status: string;
     lastSeen: number;
-    config: any;
+    config?: any;
 }
 
 // ---------- In-memory state (single instance only) ----------
@@ -70,12 +54,13 @@ app.get("/health", (req: Request, res: Response) => {
     devices: Array.from(deviceInfo.entries()).map(([deviceId, info]) => ({
       deviceId,
       status: info.status,
-      lastSeen: info.lastSeen
+      lastSeen: info.lastSeen,
+      config: info.config
     }))
   });
 });
 
-// HTTP POST /sendCommand  (MATLAB calls this)
+// HTTP POST /sendCommand  remote calls this
 app.post("/sendCommand", async (req: Request, res: Response) => {
   const body: CommandRequest = req.body;
 
@@ -85,7 +70,6 @@ app.post("/sendCommand", async (req: Request, res: Response) => {
 
   const deviceId = body.deviceId;
   const commandId = body.commandId;
-  const command = body.command;
 
   const ws = deviceConnections.get(deviceId);
   if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -96,7 +80,7 @@ app.post("/sendCommand", async (req: Request, res: Response) => {
   }
 
   // Create a promise for the response from the device
-  const responsePromise = new Promise<DeviceResponseMessage>((resolve, reject) => {
+  const responsePromise = new Promise<DeviceCommandAckMessage>((resolve, reject) => {
     const timeoutMs = 5000; // 5 seconds
 
     const timeout = setTimeout(() => {
@@ -115,12 +99,12 @@ app.post("/sendCommand", async (req: Request, res: Response) => {
     if (response.status === "ok") {
       return res.json({
         status: "ok",
-        result: response.result
+        result: response.response
       });
     }
     return res.status(500).json({
       status: "error",
-      error: response.error ?? "Device returned error"
+      error: "Device returned error"
     });
   } catch (err: any) {
     return res.status(504).json({
@@ -128,6 +112,37 @@ app.post("/sendCommand", async (req: Request, res: Response) => {
       error: err?.message ?? "Gateway error"
     });
   }
+});
+
+// HTTP POST /getConfig
+app.post("/getConfig", (req: Request, res: Response) => {
+  const body: GetConfigRequest = req.body;
+
+  if (!body || typeof body.deviceId !== "string") {
+    return res.status(400).json({ status: "error", error: "Invalid payload" });
+  }
+
+  const deviceId = body.deviceId;
+  const deviceInfoEntry = deviceInfo.get(deviceId);
+
+  if (!deviceInfoEntry) {
+    return res.status(404).json({
+      status: "error",
+      error: `Device ${deviceId} not found`
+    });
+  }
+
+  if (deviceInfoEntry.config === undefined || deviceInfoEntry.config === null) {
+    return res.status(404).json({
+      status: "error",
+      error: `Configuration not found for device ${deviceId}`
+    });
+  }
+
+  return res.json({
+    status: "ok",
+    config: deviceInfoEntry.config
+  });
 });
 
 // ---------- HTTP server + WebSocket server ----------
@@ -154,44 +169,40 @@ wss.on("connection", (ws: WebSocket) => {
 
   ws.on("message", (data: Buffer) => {
     try {
-      const text = data.toString("utf-8");
-      const msg: IncomingDeviceMessage = JSON.parse(text);
+        const text = data.toString("utf-8");
+        const msg: IncomingDeviceMessage = JSON.parse(text);
 
-      if (!deviceId) {
-        // Expect hello as the first message
-        if (msg.type === "hello" && typeof msg.deviceId === "string") {
-          deviceId = msg.deviceId;
-          deviceConnections.set(msg.deviceId, ws);
-          deviceInfo.set(msg.deviceId, { status: "connected", lastSeen: Date.now() });
-          console.log(`[WS] Device connected: ${deviceId}`);
-        } else {
-          console.warn("[WS] First message not hello, closing");
-          ws.close(1002, "Expected hello");
-        }
-        return;
-      }
-
-      // After hello, handle responses
-      if (msg.type === "response") {
-        const response = msg as DeviceResponseMessage;
-        const { requestId } = response;
-
-        if (requestId && pendingRequests.has(requestId)) {
-          const pending = pendingRequests.get(requestId)!;
-          clearTimeout(pending.timeout);
-          pendingRequests.delete(requestId);
-          pending.resolve(response);
-        } else {
-          console.warn(
-            `[WS] Unknown or timed-out requestId=${requestId} from device=${deviceId}`
-          );
+        if (!deviceId) {
+            // Expect hello as the first message
+            if (msg.type === "hello" && typeof msg.deviceId === "string") {
+                deviceId = msg.deviceId;
+                deviceConnections.set(msg.deviceId, ws);
+                deviceInfo.set(msg.deviceId, { status: "connected", lastSeen: Date.now() });
+                console.log(`[WS] Device connected: ${deviceId}`);
+            } else {
+                console.warn("[WS] First message not hello, closing");
+                ws.close(1002, "Expected hello");
+            }
+            return;
         }
 
-        deviceInfo.set(deviceId, { status: "connected", lastSeen: Date.now() });
-      } else {
-        // You can add telemetry handling here if needed
-        console.log(`[WS] Unhandled message from ${deviceId}:`, msg);
-      }
+        // After hello, handle responses
+        if (msg.type === "ack") {
+            const response = msg as DeviceCommandAckMessage;
+            const { commandId } = response;
+            if (commandId && pendingRequests.has(commandId)) {
+                const pending = pendingRequests.get(commandId)!;
+                clearTimeout(pending.timeout);
+                pendingRequests.delete(commandId);
+                pending.resolve(response);
+            }
+            deviceInfo.set(deviceId, { status: "connected", lastSeen: Date.now() });
+        } else if (msg.type === "setConfig") {
+          const setConfig = msg as DeviceSetConfigMessage;
+          deviceInfo.set(deviceId, { status: "connected", lastSeen: Date.now(), config: setConfig.config });
+        } else {
+            console.warn("[WS] Unhandled message type:", msg.type);
+        }
     } catch (e) {
       console.error("[WS] Error handling message:", e);
     }
