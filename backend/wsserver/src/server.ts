@@ -160,10 +160,7 @@ wss.on("connection", (ws: WebSocket) => {
     if (deviceId) {
       console.log(`[WS] Device disconnected: ${deviceId}`);
       deviceConnections.delete(deviceId);
-      deviceInfo.set(deviceId, {
-        status: "disconnected",
-        lastSeen: Date.now()
-      });
+      deviceInfo.delete(deviceId);
     }
   };
 

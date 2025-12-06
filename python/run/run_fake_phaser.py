@@ -14,7 +14,7 @@ import time
 import signal
 from fakephaser import FakePhaser
 from src.edge.edge_phaser_controller import EdgePhaserController
-from src.httpservice.http_edge_service import HttpEdgeService
+from src.ws.ws_edge_service import WsEdgeService
 
 
 def main():
@@ -31,7 +31,7 @@ def main():
     phaser = FakePhaser()
     
     # Create Firebase edge service
-    edge_service = HttpEdgeService(device_id)
+    edge_service = WsEdgeService(device_id)
     
     # Create edge controller
     controller = EdgePhaserController(
