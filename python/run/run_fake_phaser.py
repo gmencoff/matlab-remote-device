@@ -30,8 +30,14 @@ def main():
     # Create fake Pluto device
     phaser = FakePhaser()
     
-    # Create Firebase edge service
-    edge_service = WsEdgeService(device_id)
+    # Create WebSocket edge service
+    # Note: If you encounter SSL certificate errors, you can disable verification
+    # by passing ssl_verify=False (only for development/testing)
+    edge_service = WsEdgeService(
+        device_id,
+        "wss://remote-gateway-ts-tgyovhjiqq-uk.a.run.app/ws",
+        ssl_verify=False  # Set to False if certificate verification fails
+    )
     
     # Create edge controller
     controller = EdgePhaserController(
