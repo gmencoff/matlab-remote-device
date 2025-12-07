@@ -60,7 +60,7 @@ classdef RemotePhaser < handle
         
         function disp(obj)
             % Custom display method
-            fprintf('RemotePluto with properties:\n');
+            fprintf('RemotePhaser with properties:\n');
             names = obj.getPropertyNames();
             for i = 1:length(names)
                 fprintf('  %s: %s\n', names{i}, mat2str(obj.state.(names{i})));
