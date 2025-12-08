@@ -36,9 +36,11 @@ def main():
     # by passing ssl_verify=False (only for development/testing)
     useWs = True;
     if useWs:
+        # ws_url = "ws://localhost:8080/ws"
+        ws_url = "wss://remote-gateway-ts-tgyovhjiqq-uk.a.run.app/ws"
         edge_service = WsEdgeService(
             device_id,
-            "wss://remote-gateway-ts-tgyovhjiqq-uk.a.run.app/ws",
+            ws_url,
             ssl_verify=False  # Set to False if certificate verification fails
         )
     else:
