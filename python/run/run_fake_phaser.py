@@ -15,6 +15,7 @@ import signal
 from fakephaser import FakePhaser
 from src.edge.edge_phaser_controller import EdgePhaserController
 from src.ws.ws_edge_service import WsEdgeService
+from src.httpservice.http_edge_service import HttpEdgeService
 
 
 def main():
@@ -33,11 +34,15 @@ def main():
     # Create WebSocket edge service
     # Note: If you encounter SSL certificate errors, you can disable verification
     # by passing ssl_verify=False (only for development/testing)
-    edge_service = WsEdgeService(
-        device_id,
-        "wss://remote-gateway-ts-tgyovhjiqq-uk.a.run.app/ws",
-        ssl_verify=False  # Set to False if certificate verification fails
-    )
+    useWs = True;
+    if useWs:
+        edge_service = WsEdgeService(
+            device_id,
+            "wss://remote-gateway-ts-tgyovhjiqq-uk.a.run.app/ws",
+            ssl_verify=False  # Set to False if certificate verification fails
+        )
+    else:
+        edge_service = HttpEdgeService(device_id)
     
     # Create edge controller
     controller = EdgePhaserController(
