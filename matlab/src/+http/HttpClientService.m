@@ -12,7 +12,7 @@ classdef HttpClientService < client.ClientService
                 optargs.PollInterval = 10
             end
             
-            obj.FunctionCaller = http.FirebaseFunctionCaller(deviceId);
+            obj.FunctionCaller = http.WebsocketFunctionCaller(deviceId);
             obj.PollInterval = optargs.PollInterval;
         end
         
