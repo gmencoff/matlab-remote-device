@@ -5,6 +5,7 @@
     export interface DeviceHelloMessage {
         type: "hello";
         deviceId: string;
+        config: any;
     }
 
     export interface DeviceCommandAckMessage {

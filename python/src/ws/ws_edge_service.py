@@ -34,6 +34,7 @@ class WsEdgeService(EdgeService):
         self._on_command_callback: Optional[Callable[[Command], Ack]] = None
         self._connected = False
         self._connection_lock = threading.Lock()
+        self._current_config = {}
         
         # Start async event loop in background thread
         self._loop_thread = threading.Thread(target=self._run_event_loop, daemon=True)
@@ -78,7 +79,8 @@ class WsEdgeService(EdgeService):
                     # Send hello message as the first message
                     hello_message = {
                         "type": "hello",
-                        "deviceId": self.device_id
+                        "deviceId": self.device_id,
+                        "config": self._current_config
                     }
                     await websocket.send(json.dumps(hello_message))
                     
@@ -174,6 +176,7 @@ class WsEdgeService(EdgeService):
 
     def publish_config(self, config: Dict[str, Any]) -> None:
         """Publish the current configuration to the server via WebSocket."""
+        self._current_config = config
         if not self._ws or not self._connected or not self._loop:
             raise Exception(f"Cannot publish config - WebSocket not connected for device {self.device_id}")
         

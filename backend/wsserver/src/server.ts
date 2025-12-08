@@ -174,7 +174,7 @@ wss.on("connection", (ws: WebSocket) => {
             if (msg.type === "hello" && typeof msg.deviceId === "string") {
                 deviceId = msg.deviceId;
                 deviceConnections.set(msg.deviceId, ws);
-                deviceInfo.set(msg.deviceId, { status: "connected", lastSeen: Date.now() });
+                deviceInfo.set(msg.deviceId, { status: "connected", lastSeen: Date.now(), config: msg.config });
                 console.log(`[WS] Device connected: ${deviceId}`);
             } else {
                 console.warn("[WS] First message not hello, closing");
