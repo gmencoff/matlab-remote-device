@@ -1,6 +1,6 @@
 classdef HttpClientService < client.ClientService
     properties (Access = private)
-        FunctionCaller
+        FunctionCaller (1,1) http.FunctionCaller = http.EmptyFunctionCaller
         PollInterval
         ConfigTimer
     end
@@ -12,7 +12,7 @@ classdef HttpClientService < client.ClientService
                 optargs.PollInterval = 10
             end
             
-            obj.FunctionCaller = http.FunctionCaller(deviceId);
+            obj.FunctionCaller = http.FirebaseFunctionCaller(deviceId);
             obj.PollInterval = optargs.PollInterval;
         end
         
@@ -22,7 +22,7 @@ classdef HttpClientService < client.ClientService
         
         function subscribeConfig(obj, callback)
             % Poll config.json and invoke callback whenever it changes
-            obj.FunctionCaller.ConfigCallback = callback;
+            obj.FunctionCaller.setConfigCallback(callback);
             
             % Start polling timer
             fcnCaller = obj.FunctionCaller;
