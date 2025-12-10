@@ -64,7 +64,7 @@ class EdgePhaserController(PropertySetController, ReceiveController):
         for attr_name in self._config_props():
             # Skip private attributes and methods
             try:
-                config[attr_name] = getattr(self._phaser, attr_name)
+                config[attr_name] = self._phaser.get(attr_name)
             except Exception:
                 # Skip properties that can't be read
                 pass
@@ -87,9 +87,4 @@ class EdgePhaserController(PropertySetController, ReceiveController):
 
 
     def _config_props(self):
-        # TODO: Implement this - get the config properties from the underlying devices
-        return [
-            "rx_buffer_size",
-            "sample_rate",
-            "operating_frequency"
-        ]
+        return self._phaser.getConfigProps()

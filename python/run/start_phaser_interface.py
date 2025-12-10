@@ -7,7 +7,7 @@ from time import sleep
 from typing import Optional
 from adi import ad9361
 from adi.cn0566 import CN0566
-from phaser_interface import PhaserInterface
+from src.phaser.phaser_interface import PhaserInterface
 
 def startPhaserInterface():
     try:

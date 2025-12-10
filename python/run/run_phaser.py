@@ -17,10 +17,9 @@ import random
 from time import sleep
 from typing import Optional
 from src.edge.edge_phaser_controller import EdgePhaserController
-from phaser_interface import PhaserInterface
 from adi import ad9361
 from adi.cn0566 import CN0566
-from src.httpservice.http_edge_service import HttpEdgeService
+from src.ws.ws_edge_service import WsEdgeService
 from start_phaser_interface import startPhaserInterface
 
 def main():
@@ -40,13 +39,17 @@ def main():
         # Create phaser interface
         phaser = startPhaserInterface()
             
-        # Create Firebase edge service
-        firebase_service = HttpEdgeService(device_id=device_id)
+        ws_url = "wss://remote-gateway-ts-tgyovhjiqq-uk.a.run.app/ws"
+        edge_service = WsEdgeService(
+            device_id,
+            ws_url,
+            ssl_verify=False  # Set to False if certificate verification fails
+        )
         
         # Create edge controller
         controller = EdgePhaserController(
             phaser,
-            edge_service=firebase_service,
+            edge_service=edge_service,
             poll_s=poll_interval
         )
         
