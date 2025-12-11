@@ -42,7 +42,7 @@ class PhaserRadar:
             din = data[start_index:stop_index]
             cube[:,:,burst] = din
         
-    return cube
+        return cube
 
     @property
     def ramp_bandwidth(self):
@@ -189,7 +189,7 @@ class PhaserRadar:
         self._sdr.tx([iq, iq])
             
     def _set_rx_buffer(self):
-        total_time = self._tdd.frame_length_ms * self.num_chirps   # time in ms
+        total_time = self._tdd.frame_length_ms * self.number_chirps   # time in ms
         sample_rate = self.sample_rate
         buffer_time = 0
         power=12
