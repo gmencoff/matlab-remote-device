@@ -5,9 +5,11 @@ class PhaserInterface:
     Wrapper around the components of the phaser to provide a simpler interface.
     """
     
-    def __init__(self, phaser, sdr):
+    def __init__(self, phaser, sdr, tdd, sdr_pins):
         self._phaser = phaser
         self._sdr = sdr
+        self._tdd = tdd
+        self._sdr_pins = sdr_pins
         self.configuration = 'radar'
         
     def rx(self):
@@ -27,7 +29,7 @@ class PhaserInterface:
         
     def _setup_config_object(self):
         if self.configuration == "radar":
-            self._config_object = PhaserRadar(self._phaser,self._sdr)
+            self._config_object = PhaserRadar(self._phaser,self._sdr,self._tdd,self._sdr_pins)
         elif self.configuration == "radio":
             self._config_object = [] # TODO    
     
