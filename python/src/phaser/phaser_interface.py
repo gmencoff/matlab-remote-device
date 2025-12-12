@@ -31,40 +31,19 @@ class PhaserInterface:
         if self.configuration == "radar":
             self._config_object = PhaserRadar(self._phaser,self._sdr,self._tdd,self._sdr_pins)
         elif self.configuration == "radio":
-            self._config_object = [] # TODO    
+            self._config_object = [] # TODO
+            
+    def set_prop(self,name,value):
+        if name in self.getBaseProps():
+            setattr(self,name,value)
+        else:
+            setattr(self._config_object,name,value)
     
-    def get(self,name):
+    def get_prop(self,name):
         if name in self.getBaseProps():
             return getattr(self,name)
         else:
             return getattr(self._config_object,name)
-        
-    @property
-    def sample_rate(self):
-        return self._sdr.sample_rate
-    
-    @sample_rate.setter
-    def sample_rate(self, value):
-        self._sdr_sample_rate = int(value)
-        
-    @property
-    def rx_buffer_size(self):
-        return self._sdr.rx_buffer_size
-    
-    @rx_buffer_size.setter
-    def rx_buffer_size(self, value):
-        self._sdr.rx_buffer_size = int(value)
-        
-    @property
-    def operating_frequency(self):
-        return self._phaser.SignalFreq
-    
-    @operating_frequency.setter
-    def operating_frequency(self, value):
-        self._phaser.SignalFreq = int(value)
-        self._phaser.frequency = (
-            self._phaser.SignalFreq + self._sdr.rx_lo
-        ) // 4  # PLL feedback via /4 VCO output
         
     def getConfigProps(self):
         configProps = self._config_object.getConfigProps()

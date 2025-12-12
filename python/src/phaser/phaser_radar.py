@@ -32,15 +32,18 @@ class PhaserRadar:
         samples_per_frame = int(frame_length * self.sample_rate)
 
         # Get the number of samples and the number of pulses
-        num_samples = self.samples_per_pulses
+        num_samples = self.samples_per_pulse
         num_pulses = self.number_chirps
         
+        # Initialize data cube
         cube = np.zeros((num_samples, 2, num_pulses), dtype=complex)
+        
+        # Loop through data and get samples
         for burst in range(num_pulses):
             start_index = start_offset_samples + burst*samples_per_frame
             stop_index = start_index + num_samples
-            din = data[start_index:stop_index]
-            cube[:,:,burst] = din
+            cube[:,0,burst] = data[0][start_index:stop_index]
+            cube[:,1,burst] = data[1][start_index:stop_index]
         
         return cube
 
@@ -74,7 +77,9 @@ class PhaserRadar:
     
     @number_chirps.setter
     def number_chirps(self,value):
+        self._tdd.enable = False
         self._tdd.burst_count = int(value)
+        self._tdd.enable = True
         
     @property    
     def prf(self):
