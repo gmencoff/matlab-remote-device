@@ -1,0 +1,10 @@
+gcloud builds submit --tag gcr.io/sdr-stream/remote-gateway-ts
+
+gcloud run deploy remote-gateway-ts \
+  --image gcr.io/sdr-stream/remote-gateway-ts \
+  --region us-east4 \
+  --platform managed \
+  --allow-unauthenticated \
+  --max-instances 1 \
+  --concurrency 200 \
+  --memory 1Gi
