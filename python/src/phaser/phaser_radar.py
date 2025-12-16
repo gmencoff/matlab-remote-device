@@ -45,7 +45,7 @@ class PhaserRadar:
             cube[:,0,burst] = data[0][start_index:stop_index]
             cube[:,1,burst] = data[1][start_index:stop_index]
         
-        return cube
+        return cube      
 
     @property
     def ramp_bandwidth(self):
@@ -80,6 +80,7 @@ class PhaserRadar:
         self._tdd.enable = False
         self._tdd.burst_count = int(value)
         self._tdd.enable = True
+        self._set_rx_buffer()
         
     @property    
     def prf(self):
@@ -89,7 +90,10 @@ class PhaserRadar:
     @prf.setter
     def prf(self,value):
         frame_length = 1/value
+        self._tdd.enable = False
         self._tdd.frame_length_ms = frame_length*1e3
+        self._tdd.enable = True
+        self._set_rx_buffer()
         
     def _setup_radar(self):
         # Default parameters
@@ -205,6 +209,7 @@ class PhaserRadar:
             if power==23:
                 break     # max pluto buffer size is 2**23, but for tdd burst mode, set to 2**22
         self._sdr.rx_buffer_size = buffer_size
+        self._sdr.rx_destroy_buffer()
         
     def getConfigProps(self):
         return [

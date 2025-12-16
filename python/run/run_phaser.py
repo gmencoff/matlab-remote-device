@@ -29,7 +29,7 @@ def main():
     device_id = createId(10)
     poll_interval = 10.0  # seconds
     
-    print(f"Starting Phaser Pluto Device with ID: {device_id}")
+    print(f"Starting Phaser Device with ID: {device_id}")
     print("=" * 50)
 
     # First try to connect to a locally connected CN0566. On success, connect,
@@ -55,14 +55,12 @@ def main():
         
         print("    Phaser device is now running!")
         print(f"   Device ID: {device_id}")
-        print(f"   Polling interval: {poll_interval}s")
-        print("   Listening for commands via Firebase...")
         print("\nPress Ctrl+C to stop the device")
         print("-" * 50)
         
         # Keep the main thread alive
         def signal_handler(sig, frame):
-            print("\n\n🛑 Shutting down fake Pluto device...")
+            print("\n\n🛑 Shutting down fPhaser...")
             print("✓ Device stopped")
             sys.exit(0)
         
@@ -73,11 +71,8 @@ def main():
             time.sleep(1)
             
     except Exception as e:
-        print(f"❌ Error starting fake Pluto device: {e}")
-        print("\nTroubleshooting:")
-        print("1. Make sure Firebase credentials are properly configured")
-        print("2. Check that Firebase project ID is correct")
-        print("3. Ensure all dependencies are installed: pip install -r requirements.txt")
+        print("Error starting remote Phaser")
+        print(e)
         sys.exit(1)
         
 def createId(n):

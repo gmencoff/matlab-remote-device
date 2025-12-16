@@ -22,6 +22,8 @@ from adi.cn0566 import CN0566
 from src.ws.ws_edge_service import WsEdgeService
 from start_phaser_interface import startPhaserInterface
 from fake_edge_service import FakeEdgeService
+#import matplotlib.pyplot as plt
+from src.data.complex_number import ComplexNumberArray
 
 def main():
     """Main function to set up and run the real Pluto with Firebase edge service."""
@@ -37,9 +39,13 @@ def main():
     phaser = startPhaserInterface()
     
     # Set the number of chirps
-    phaser.set_prop('number_chirps',2)
-    a = phaser.get_prop('number_chirps')
-    print(a)
+    phaser.set_prop('sample_rate',700e3)
+    #a = phaser.get_prop('number_chirps')
+    
+    data = phaser.rx()
+    cn = ComplexNumberArray(data)
+    print(cn.to_dict()["real_samples"])
+    
     #a = phaser.get_prop('number_chirps')
     #print(a)
     
