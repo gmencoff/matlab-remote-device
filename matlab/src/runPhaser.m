@@ -5,16 +5,8 @@ clc;
 
 %% Create remote phaser
 
-id = 'fake-phaser-001';
+id = 'KwlwuyCShE';
 sdr = phaser.RemotePhaser(id);
-
-%% Time run
-
-tic
-for i = 1:100
-    sdr.rx();
-end
-toc
 
 %% Find HB100 Fc
 
