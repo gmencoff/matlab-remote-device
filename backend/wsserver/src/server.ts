@@ -193,7 +193,6 @@ wss.on("connection", (ws: WebSocket) => {
                 pendingRequests.delete(commandId);
                 pending.resolve(response);
             }
-            deviceInfo.set(deviceId, { status: "connected", lastSeen: Date.now() });
         } else if (msg.type === "setConfig") {
           const setConfig = msg as DeviceSetConfigMessage;
           deviceInfo.set(deviceId, { status: "connected", lastSeen: Date.now(), config: setConfig.config });
