@@ -1,6 +1,29 @@
 from src.phaser.phaser_radar import PhaserRadar
+from abc import ABC, abstractmethod
 
-class PhaserInterface:
+class PhaserInterface(ABC):
+    @abstractmethod
+    def set_prop(self,name,value):
+        # Set a property on the device
+        pass
+
+    @abstractmethod
+    def get_prop(self,name):
+        # Get a property from the device
+        pass
+
+    @abstractmethod
+    def rx(self):
+        # Get receive data from the device
+        pass
+
+    @abstractmethod
+    def getConfigProps(self):
+        # Return configuration properties from the device
+        pass
+
+
+class RealPhaserInterface(PhaserInterface):
     """
     Wrapper around the components of the phaser to provide a simpler interface.
     """

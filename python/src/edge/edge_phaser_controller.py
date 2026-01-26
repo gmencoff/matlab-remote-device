@@ -4,13 +4,14 @@ import numpy as np
 from src.services.edge_service import EdgeService
 from src.commands.commands import Command, Ack, PropertyAck, PropertySetController, ReceiveAck, ReceiveController, ReceiveStreamAck
 from src.data.complex_number import ComplexNumberArray
+from src.phaser.phaser_interface import PhaserInterface
 
 class EdgePhaserController(PropertySetController, ReceiveController):
     """
     Controller for the Phaser board on the edge.
     """
     
-    def __init__(self, phaser, edge_service: EdgeService, poll_s: float = 1.0):
+    def __init__(self, phaser: PhaserInterface, edge_service: EdgeService, poll_s: float = 1.0):
         self._phaser = phaser
         self._edge_service = edge_service
         self._config = {}
