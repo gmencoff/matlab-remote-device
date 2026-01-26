@@ -22,8 +22,8 @@ class ComplexNumberArray:
         arr = np.asarray(complex_samples)
 
         # Store as real and imaginary
-        self.real_samples = complex_samples.real.tolist()
-        self.imag_samples = complex_samples.imag.tolist()
+        self.real_samples = arr.real.tolist()
+        self.imag_samples = arr.imag.tolist()
         
 
     def to_dict(self):
