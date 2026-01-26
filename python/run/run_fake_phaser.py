@@ -14,8 +14,7 @@ import time
 import signal
 from fakephaser import FakePhaser
 from src.edge.edge_phaser_controller import EdgePhaserController
-from src.ws.ws_edge_service import WsEdgeService
-from src.httpservice.http_edge_service import HttpEdgeService
+from src.aps.aps_edge_service import ApsEdgeService
 
 
 def main():
@@ -32,12 +31,7 @@ def main():
     phaser = FakePhaser()
     
     # Create the websocket edge service
-    ws_url = "wss://remote-gateway-ts-tgyovhjiqq-uk.a.run.app/ws"
-    edge_service = WsEdgeService(
-        device_id,
-        ws_url,
-        ssl_verify=False  # Set to False if certificate verification fails
-    )
+    edge_service = ApsEdgeService(device_id=device_id)
     
     # Create edge controller
     controller = EdgePhaserController(
@@ -49,7 +43,6 @@ def main():
     print(f"   Phaser device is now running!")
     print(f"   Device ID: {device_id}")
     print(f"   Polling interval: {poll_interval}s")
-    print("   Listening for commands via Firebase...")
     print("\nPress Ctrl+C to stop the device")
     print("-" * 50)
     
