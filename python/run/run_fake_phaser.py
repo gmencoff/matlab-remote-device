@@ -31,20 +31,13 @@ def main():
     # Create fake Pluto device
     phaser = FakePhaser()
     
-    # Create WebSocket edge service
-    # Note: If you encounter SSL certificate errors, you can disable verification
-    # by passing ssl_verify=False (only for development/testing)
-    useWs = True;
-    if useWs:
-        # ws_url = "ws://localhost:8080/ws"
-        ws_url = "wss://remote-gateway-ts-tgyovhjiqq-uk.a.run.app/ws"
-        edge_service = WsEdgeService(
-            device_id,
-            ws_url,
-            ssl_verify=False  # Set to False if certificate verification fails
-        )
-    else:
-        edge_service = HttpEdgeService(device_id)
+    # Create the websocket edge service
+    ws_url = "wss://remote-gateway-ts-tgyovhjiqq-uk.a.run.app/ws"
+    edge_service = WsEdgeService(
+        device_id,
+        ws_url,
+        ssl_verify=False  # Set to False if certificate verification fails
+    )
     
     # Create edge controller
     controller = EdgePhaserController(
