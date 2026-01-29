@@ -68,6 +68,16 @@ class ApsEdgeService(EdgeService):
                 # Return command
                 cmddecode = decode_command(cmd)
                 ack = on_command(cmddecode)
+                
+                # Create the ack payload
+                payload = {
+                "deviceId": self.device_id,
+                "commandId": cmddecode.id,
+                "response": ack.to_dict()
+                }
+                
+                # Return to the C++ service
+                self._queue.acknowledge(payload)
             
             # Wait
             time.sleep(2)

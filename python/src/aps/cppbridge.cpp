@@ -8,15 +8,16 @@
 #include <chrono>
 #include <string>
 #include <random>
+#include <iostream>
 
 namespace py = pybind11;
 
 struct Command {
     std::string id;
-    double ts;
-    std::string name;
-    int value;
-    std::string type;
+    double ts;          // seconds since epoch
+    std::string type;   // "property"
+    std::string name;   // "rx_buffer_size"
+    int value;          // 100..1000
 };
 
 class CommandQueue {
@@ -27,6 +28,7 @@ public:
         stop();
     }
 
+    // Starts a background thread that enqueues one command every 5 seconds.
     void start() {
         if (running_) return;
         running_ = true;
@@ -41,28 +43,28 @@ public:
 
                 Command cmd;
                 cmd.id = "cmd_" + std::to_string(counter++);
-                cmd.ts = now();
+                cmd.ts = now_seconds();
+                cmd.type = "property";
                 cmd.name = "rx_buffer_size";
                 cmd.value = dist(rng);
-                cmd.type = "property";
 
-                enqueue(cmd);
+                enqueue_(cmd);
             }
         });
     }
 
+    // Stops the background thread (if running).
     void stop() {
         if (!running_) return;
         running_ = false;
-        if (worker_.joinable())
+
+        if (worker_.joinable()) {
             worker_.join();
+        }
     }
 
-    void enqueue(const Command& cmd) {
-        std::lock_guard<std::mutex> lock(mu_);
-        queue_.push(cmd);
-    }
-
+    // Polls one command from the queue.
+    // Returns a Python dict if available; otherwise returns None.
     py::object poll() {
         std::lock_guard<std::mutex> lock(mu_);
         if (queue_.empty()) {
@@ -75,18 +77,49 @@ public:
         py::dict d;
         d["id"] = cmd.id;
         d["ts"] = cmd.ts;
+        d["type"] = cmd.type;
         d["name"] = cmd.name;
         d["value"] = cmd.value;
-        d["type"] = cmd.type;
         return d;
     }
 
+    // Called by Python after processing a command.
+    // ack is expected to be:
+    // {
+    //   "deviceId": "string",
+    //   "commandId": "string",
+    //   "response": dict
+    // }
+    void acknowledge(py::dict ack) {
+        std::string deviceId = py::str(ack["deviceId"]);
+        std::string commandId = py::str(ack["commandId"]);
+        py::dict response = py::cast<py::dict>(ack["response"]);
+
+        std::cout << "[ACK]\n";
+        std::cout << "  deviceId: " << deviceId << "\n";
+        std::cout << "  commandId: " << commandId << "\n";
+        std::cout << "  response:\n";
+
+        for (auto item : response) {
+            std::string key = py::str(item.first);
+            std::string val = py::str(item.second);
+            std::cout << "    " << key << ": " << val << "\n";
+        }
+
+        std::cout << std::flush;
+    }
+
 private:
-    double now() const {
+    static double now_seconds() {
         using clock = std::chrono::system_clock;
         return std::chrono::duration<double>(
             clock::now().time_since_epoch()
         ).count();
+    }
+
+    void enqueue_(const Command& cmd) {
+        std::lock_guard<std::mutex> lock(mu_);
+        queue_.push(cmd);
     }
 
     std::queue<Command> queue_;
@@ -100,5 +133,6 @@ PYBIND11_MODULE(cppbridge, m) {
         .def(py::init<>())
         .def("start", &CommandQueue::start)
         .def("stop", &CommandQueue::stop)
-        .def("poll", &CommandQueue::poll);
+        .def("poll", &CommandQueue::poll)
+        .def("acknowledge", &CommandQueue::acknowledge);
 }
